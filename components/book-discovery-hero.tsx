@@ -9,8 +9,8 @@ export default function BookDiscoveryHero() {
           <div className='hero-text'>
             <h1>Discover Your Next Great Read</h1>
             <p className='hero-subtitle'>
-              Find books you'll love from our carefully curated collection. 
-              Whether you're into fantasy epics, thrilling mysteries, or heartwarming romance, 
+              Find books you&apos;ll love from our carefully curated collection. 
+              Whether you&apos;re into fantasy epics, thrilling mysteries, or heartwarming romance, 
               your next adventure is just a page away.
             </p>
             <div className='hero-actions'>

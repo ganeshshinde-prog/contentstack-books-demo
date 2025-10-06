@@ -88,9 +88,7 @@ export type Pages = [
   page: Page
 ]
 
-export type PostPage = [
-  post: Post
-]
+export type PostPage = Post[]
 
 export type PageUrl = {
   pageUrl: string;

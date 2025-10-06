@@ -12,6 +12,7 @@ interface Book {
   bookimage: {
     url: string;
     title: string;
+    $?: any;
   };
   $: any;
 }

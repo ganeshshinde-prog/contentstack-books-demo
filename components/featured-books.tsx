@@ -75,7 +75,7 @@ export default function FeaturedBooks() {
         ) : (
           <div className='no-featured-books'>
             <h3>Coming Soon!</h3>
-            <p>We're working on adding more amazing books to our collection.</p>
+            <p>We&apos;re working on adding more amazing books to our collection.</p>
             <Link href='/books' className='btn secondary-btn'>
               View Available Books
             </Link>

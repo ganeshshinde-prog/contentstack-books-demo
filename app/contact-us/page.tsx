@@ -76,8 +76,8 @@ export default function ContactUs() {
             <h1>Get in touch</h1>
             <p className='hero-subtitle'>
               Connect with fellow book lovers and discover your next great read. 
-              Whether you're looking for recommendations, have questions about our collection, 
-              or want to share your thoughts, we'd love to hear from you.
+              Whether you&apos;re looking for recommendations, have questions about our collection, 
+              or want to share your thoughts, we&apos;d love to hear from you.
             </p>
             
             <div className='contact-benefits'>
@@ -101,7 +101,7 @@ export default function ContactUs() {
           <div className='contact-form-container'>
             <div className='contact-form-left'>
               <h2>How can we help you?</h2>
-              <p>Fill out the form below and we'll get back to you as soon as possible.</p>
+              <p>Fill out the form below and we&apos;ll get back to you as soon as possible.</p>
               
               <div className='contact-info-cards'>
                 <div className='info-card'>
@@ -135,7 +135,7 @@ export default function ContactUs() {
                 <div className='success-message'>
                   <div className='success-icon'>✅</div>
                   <h3>Thank you for your message!</h3>
-                  <p>We've received your inquiry and will get back to you within 24 hours.</p>
+                  <p>We&apos;ve received your inquiry and will get back to you within 24 hours.</p>
                   <button 
                     onClick={() => setSubmitStatus('')}
                     className='btn secondary-btn'

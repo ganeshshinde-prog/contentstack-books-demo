@@ -58,7 +58,7 @@ export default function RequestBookPage() {
             <div className='hero-icon'>📚</div>
             <h1>Request a New Book</h1>
             <p className='hero-description'>
-              Can't find the book you're looking for in our collection? Submit a request and we'll do our best to add it for you and other readers.
+              Can&apos;t find the book you&apos;re looking for in our collection? Submit a request and we&apos;ll do our best to add it for you and other readers.
             </p>
           </div>
         </div>
@@ -68,7 +68,7 @@ export default function RequestBookPage() {
             <div className='form-container'>
               <div className='form-intro'>
                 <h2>Tell us about the book</h2>
-                <p>Please provide as much information as possible to help us find the exact book you're looking for.</p>
+                <p>Please provide as much information as possible to help us find the exact book you&apos;re looking for.</p>
               </div>
 
               <form onSubmit={handleSubmit} className='request-form'>
@@ -143,7 +143,7 @@ export default function RequestBookPage() {
                       required
                       placeholder='your.email@example.com'
                     />
-                    <small className='field-note'>We'll notify you when the book becomes available</small>
+                    <small className='field-note'>We&apos;ll notify you when the book becomes available</small>
                   </div>
                   <div className='form-group'>
                     <label htmlFor='phone'>Phone/Mobile</label>
@@ -198,8 +198,8 @@ export default function RequestBookPage() {
                 <h3>📋 What happens next?</h3>
                 <ul className='info-list'>
                   <li>We review your request within 2-3 business days</li>
-                  <li>If approved, we'll add the book to our collection</li>
-                  <li>You'll receive an email notification when it's available</li>
+                  <li>If approved, we&apos;ll add the book to our collection</li>
+                  <li>You&apos;ll receive an email notification when it&apos;s available</li>
                   <li>The book will appear in our catalog for all readers</li>
                 </ul>
               </div>
@@ -208,7 +208,7 @@ export default function RequestBookPage() {
                 <h3>💡 Tips for better results</h3>
                 <ul className='info-list'>
                   <li>Provide the complete and accurate book title</li>
-                  <li>Include the author's full name if known</li>
+                  <li>Include the author&apos;s full name if known</li>
                   <li>Add ISBN for faster and more accurate identification</li>
                   <li>Mention specific edition if it matters to you</li>
                 </ul>
@@ -216,7 +216,7 @@ export default function RequestBookPage() {
 
               <div className='info-card'>
                 <h3>🔍 Already in our collection?</h3>
-                <p>Check if the book you're looking for is already available:</p>
+                <p>Check if the book you&apos;re looking for is already available:</p>
                 <div className='quick-actions'>
                   <Link href='/books' className='btn secondary-btn small'>
                     Browse All Books
@@ -233,7 +233,7 @@ export default function RequestBookPage() {
             <div className='success-content'>
               <div className='success-icon'>✅</div>
               <h2>Request Submitted Successfully!</h2>
-              <p>Thank you for your book request! We've received your submission and will review it shortly.</p>
+              <p>Thank you for your book request! We&apos;ve received your submission and will review it shortly.</p>
               
               <div className='success-details'>
                 <h3>Request Details:</h3>

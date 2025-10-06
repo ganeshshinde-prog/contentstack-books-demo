@@ -49,8 +49,8 @@ export default function RequestNewBook() {
       <div className='max-width'>
         <div className='request-book-header'>
           <div className='request-icon'>📚</div>
-          <h2>Can't Find What You're Looking For?</h2>
-          <p>Request a book and we'll do our best to add it to our collection</p>
+          <h2>Can&apos;t Find What You&apos;re Looking For?</h2>
+          <p>Request a book and we&apos;ll do our best to add it to our collection</p>
           
           {!showForm && !submitted && (
             <button 
@@ -66,7 +66,7 @@ export default function RequestNewBook() {
           <div className='request-book-form-container'>
             <div className='form-header'>
               <h3>Request a Book</h3>
-              <p>Please fill in the details below. We'll notify you as soon as the book becomes available.</p>
+              <p>Please fill in the details below. We&apos;ll notify you as soon as the book becomes available.</p>
             </div>
 
             <form onSubmit={handleSubmit} className='request-book-form'>
@@ -198,7 +198,7 @@ export default function RequestNewBook() {
           <div className='request-success'>
             <div className='success-icon'>✅</div>
             <h3>Book Request Submitted Successfully!</h3>
-            <p>Thank you for your request! We've received your book suggestion and will review it shortly.</p>
+            <p>Thank you for your request! We&apos;ve received your book suggestion and will review it shortly.</p>
             <div className='success-details'>
               <div className='detail-item'>
                 <strong>Book:</strong> {formData.bookTitle}

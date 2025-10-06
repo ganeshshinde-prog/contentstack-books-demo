@@ -24,8 +24,8 @@ export default function Home() {
   async function fetchData() {
     try {
       // Use "/home" for the homepage instead of the root URL
-      const entryUrl = usePathname() === '/' ? '/home' : usePathname();
-      const entryRes = await getPageRes(entryUrl);
+      const pageUrl = entryUrl === '/' ? '/home' : entryUrl;
+      const entryRes = await getPageRes(pageUrl);
       if (!entryRes) throw new Error('Status code 404');
       setEntry(entryRes);
     } catch (error) {

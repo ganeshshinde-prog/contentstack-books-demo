@@ -8,7 +8,7 @@ import parse from 'html-react-parser';
 import { onEntryChange } from '../contentstack-sdk';
 import { getAllEntries, getHeaderRes } from '../helper';
 import Skeleton from 'react-loading-skeleton';
-import { HeaderProps, Entry, NavLinks } from "../typescript/layout";
+import { HeaderProps, Entry, NavLinks, PageRef } from "../typescript/layout";
 
 export default function Header() {
   const [header, setHeaderProp] = useState<HeaderProps | undefined>(undefined);
@@ -41,7 +41,7 @@ export default function Header() {
                 label: entry.title,
                 page_reference: [
                   { title: entry.title, url: entryUrl, $: entry.$ },
-                ],
+                ] as [PageRef],
                 $:{}
               });
             }
@@ -63,7 +63,7 @@ export default function Header() {
         label: 'Request New Book',
         page_reference: [
           { title: 'Request New Book', url: '/request-book', $: {} },
-        ],
+        ] as [PageRef],
         $: {}
       };
       

@@ -38,7 +38,7 @@ export default function ReadingQuotes() {
         <div className='quote-container'>
           <div className='quote-icon'>📚</div>
           <blockquote className='featured-quote'>
-            <p>"{randomQuote.text}"</p>
+            <p>&ldquo;{randomQuote.text}&rdquo;</p>
             <cite>— {randomQuote.author}</cite>
           </blockquote>
         </div>

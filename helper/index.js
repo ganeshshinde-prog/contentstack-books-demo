@@ -65,25 +65,15 @@ export const getPageRes = async (entryUrl) => {
 };
 
 export const getBlogListRes = async () => {
-    const response = await Stack.getEntry({
-        contentTypeUid: "blog_post",
-        referenceFieldPath: ["author", "related_post"],
-        jsonRtePath: ["body"],
-    });
-    liveEdit &&
-        response[0].forEach((entry) => addEditableTags(entry, "blog_post", true));
-    return response[0];
+    // Blog functionality is not available in this books demo
+    // Return empty array to prevent content type errors
+    return [];
 };
 
 export const getBlogPostRes = async (entryUrl) => {
-    const response = await Stack.getEntryByUrl({
-        contentTypeUid: "blog_post",
-        entryUrl,
-        referenceFieldPath: ["author", "related_post"],
-        jsonRtePath: ["body", "related_post.body"],
-    });
-    liveEdit && addEditableTags(response[0], "blog_post", true);
-    return response[0];
+    // Blog functionality is not available in this books demo
+    // Return null to indicate no blog post found
+    return null;
 };
 
 export const getAllComposableHeros = async (entryUrl) => {

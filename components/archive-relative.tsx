@@ -15,7 +15,7 @@ type Blog = {
 }
 
 type BlogListProps = {
-  blogs: [Blog];
+  blogs: Blog[];
 }
 
 export default function ArchiveRelative({ blogs }: BlogListProps) {

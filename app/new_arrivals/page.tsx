@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { onEntryChange } from '../../contentstack-sdk';
 import { getNewArrivalsRes } from '../../helper';
 import Skeleton from 'react-loading-skeleton';
@@ -24,7 +24,7 @@ interface Book {
   $: any;
 }
 
-export default function NewArrivals() {
+function NewArrivalsContent() {
   const [books, setBooks] = useState<Book[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,7 +163,7 @@ export default function NewArrivals() {
             <div className='no-books'>
               <div className='no-books-icon'>📚</div>
               <h3>No New {selectedGenre} Books</h3>
-              <p>We don't have any new {selectedGenre.toLowerCase()} books at the moment.</p>
+              <p>We don&apos;t have any new {selectedGenre.toLowerCase()} books at the moment.</p>
               <div className='no-books-actions'>
                 <Link href='/new_arrivals' className='btn secondary-btn'>
                   View All New Arrivals
@@ -204,5 +204,31 @@ export default function NewArrivals() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NewArrivals() {
+  return (
+    <Suspense fallback={
+      <div className='new-arrivals-container'>
+        <div className='max-width'>
+          <div className='new-arrivals-header'>
+            <h1>New Arrivals</h1>
+            <p>Loading new books...</p>
+          </div>
+          <div className='new-arrivals-results'>
+            <div className='books-grid'>
+              {[...Array(6)].map((_, index) => (
+                <div key={index} className='book-skeleton'>
+                  <Skeleton height={400} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <NewArrivalsContent />
+    </Suspense>
   );
 }

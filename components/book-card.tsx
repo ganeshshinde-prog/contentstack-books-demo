@@ -29,7 +29,7 @@ export default function BookCard({ book }: BookCardProps) {
           src={book.bookimage.url}
           alt={book.bookimage.title}
           className='book-image'
-          {...book.bookimage.$?.url}
+          {...book.$?.bookimage.url}
         />
         <div className='book-type-badge'>
           {book.book_type}

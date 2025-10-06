@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { onEntryChange } from '../../contentstack-sdk';
 import { getBooksRes } from '../../helper';
 import Skeleton from 'react-loading-skeleton';
@@ -24,7 +24,7 @@ interface Book {
   $: any;
 }
 
-export default function Books() {
+function BooksContent() {
   const [books, setBooks] = useState<Book[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +144,7 @@ export default function Books() {
             <div className='no-books'>
               <div className='no-books-icon'>📚</div>
               <h3>No {selectedGenre} Books Found</h3>
-              <p>We don't have any {selectedGenre.toLowerCase()} books in our collection yet.</p>
+              <p>We don&apos;t have any {selectedGenre.toLowerCase()} books in our collection yet.</p>
               <div className='no-books-actions'>
                 <Link href='/books' className='btn secondary-btn'>
                   View All Books
@@ -160,5 +160,31 @@ export default function Books() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Books() {
+  return (
+    <Suspense fallback={
+      <div className='books-container'>
+        <div className='max-width'>
+          <div className='books-header'>
+            <h1>Our Book Collection</h1>
+            <p>Loading books...</p>
+          </div>
+          <div className='books-results'>
+            <div className='books-grid'>
+              {[...Array(6)].map((_, index) => (
+                <div key={index} className='book-skeleton'>
+                  <Skeleton height={400} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <BooksContent />
+    </Suspense>
   );
 }

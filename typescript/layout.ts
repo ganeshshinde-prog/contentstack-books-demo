@@ -21,7 +21,7 @@ type Announcement = {
   $: AdditionalParam;
 }
 
-type PageRef = {
+export type PageRef = {
   title: string;
   url: string;
   $: AdditionalParam;
