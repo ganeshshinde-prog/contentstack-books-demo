@@ -14,18 +14,17 @@ import FeaturedBooks from "@/components/featured-books";
 import GenreCategories from "@/components/genre-categories";
 import ReadingQuotes from "@/components/reading-quotes";
 import ReadingStats from "@/components/reading-stats";
-import RequestNewBook from "@/components/request-new-book";
+import ScrollingBooks from "@/components/scrolling-books";
 
-export default function Home() {
+export default function HomePage() {
   const entryUrl = usePathname();
 
   const [getEntry, setEntry] = useState<Page>();
 
   async function fetchData() {
     try {
-      // Use "/home" for the homepage instead of the root URL
-      const entryUrl = usePathname() === '/' ? '/home' : usePathname();
-      const entryRes = await getPageRes(entryUrl);
+      // Use "/home" for the homepage content from Contentstack
+      const entryRes = await getPageRes('/home');
       if (!entryRes) throw new Error('Status code 404');
       setEntry(entryRes);
     } catch (error) {
@@ -48,6 +47,9 @@ export default function Home() {
       {/* Featured Books Section */}
       <FeaturedBooks />
       
+      {/* Scrolling Books Collection - Inspired by Contentstack's customer logos */}
+      <ScrollingBooks />
+      
       {/* Reading Quote Section */}
       <ReadingQuotes />
       
@@ -56,9 +58,6 @@ export default function Home() {
       
       {/* Reading Stats/Benefits */}
       <ReadingStats />
-      
-      {/* Request New Book Section */}
-      <RequestNewBook />
       
       {/* CMS Content (if any) */}
       {getEntry ? (

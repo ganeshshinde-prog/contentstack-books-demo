@@ -111,9 +111,9 @@ export const getComposableHeroHomeWorld = async () => {
 
 export const getComposableHeroSingleRes = async (entryUrl) => {
     const response = await Stack.getEntryByUrl({
-        contentTypeUid: "character",
+        contentTypeUid: "header",
         entryUrl,
-        referenceFieldPath: ["home_world"],
+        referenceFieldPath: ["books"],
         jsonRtePath: ["description"],
     });
 
@@ -146,6 +146,36 @@ export const getSuperheroGalleryRes = async () => {
     liveEdit &&
         response[0].forEach((entry) => addEditableTags(entry, "character", true));
     return response;
+};
+
+export const getBooksRes = async () => {
+    const response = await Stack.getEntry({
+        contentTypeUid: "bookinfo",
+        referenceFieldPath: undefined,
+        jsonRtePath: ["book_description"],
+    });
+    liveEdit &&
+        response[0].forEach((entry) => addEditableTags(entry, "bookinfo", true));
+    return response[0];
+};
+
+export const getNewArrivalsRes = async () => {
+    const response = await Stack.getEntry({
+        contentTypeUid: "bookinfo",
+        referenceFieldPath: undefined,
+        jsonRtePath: ["book_description"],
+    });
+    liveEdit &&
+        response[0].forEach((entry) => addEditableTags(entry, "bookinfo", true));
+    
+    // Filter books to show only "new arrivals" - you can modify this logic
+    // For now, we'll show all books but you can add date filtering or tags
+    const allBooks = response[0];
+    
+    // Sort by creation date (newest first) and limit to recent books
+    // Since we don't have created_at field, we'll use the order from CMS
+    // In a real scenario, you'd filter by date or a "new_arrival" tag
+    return allBooks;
 };
 
 export const metaData = (seo) => {

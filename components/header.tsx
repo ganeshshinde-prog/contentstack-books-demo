@@ -31,16 +31,51 @@ export default function Header() {
               (navLink: NavLinks) => navLink.label === entry.title
             );
             if (!hFound) {
+              // Fix the New Arrivals URL to point to /new_arrivals instead of /new_arrivals/the-wheel-of-time
+              let entryUrl = entry.url;
+              if (entry.title === 'New Arrivals' && entry.url === '/new_arrivals/the-wheel-of-time') {
+                entryUrl = '/new_arrivals';
+              }
+              
               newHeader.navigation_menu?.push({
                 label: entry.title,
                 page_reference: [
-                  { title: entry.title, url: entry.url, $: entry.$ },
+                  { title: entry.title, url: entryUrl, $: entry.$ },
                 ],
                 $:{}
               });
             }
           });
     }
+    
+    // Add "Request New Book" link after "New Arrivals" if it doesn't exist
+    const requestBookExists = newHeader.navigation_menu?.find(
+      (navLink: NavLinks) => navLink.label === 'Request New Book'
+    );
+    
+    if (!requestBookExists) {
+      // Find the index of "New Arrivals" to insert "Request New Book" right after it
+      const newArrivalsIndex = newHeader.navigation_menu?.findIndex(
+        (navLink: NavLinks) => navLink.label === 'New Arrivals'
+      );
+      
+      const requestBookLink = {
+        label: 'Request New Book',
+        page_reference: [
+          { title: 'Request New Book', url: '/request-book', $: {} },
+        ],
+        $: {}
+      };
+      
+      if (newArrivalsIndex !== undefined && newArrivalsIndex >= 0) {
+        // Insert right after "New Arrivals"
+        newHeader.navigation_menu?.splice(newArrivalsIndex + 1, 0, requestBookLink);
+      } else {
+        // If "New Arrivals" not found, add at the end
+        newHeader.navigation_menu?.push(requestBookLink);
+      }
+    }
+    
     return newHeader
   }
 
