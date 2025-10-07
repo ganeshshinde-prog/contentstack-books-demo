@@ -23,11 +23,41 @@ export default function RequestNewBook() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setLoading(false);
-    setSubmitted(true);
-    console.log('Book request submitted:', formData);
+    
+    try {
+      // Send email notification to the customer using the API
+      const emailResponse = await fetch('/api/send-book-request-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerEmail: formData.email,
+          bookTitle: formData.bookTitle,
+          author: formData.author,
+          isbn: formData.isbn,
+          quantity: formData.quantity,
+          phone: formData.phone,
+          additionalNotes: formData.additionalNotes,
+          customerName: formData.email.split('@')[0], // Extract name from email prefix
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error('Failed to send confirmation email');
+      }
+
+      const emailResult = await emailResponse.json();
+      console.log('Email response:', emailResult);
+      
+      setSubmitted(true);
+      console.log('Book request submitted:', formData);
+    } catch (error) {
+      console.error('Error submitting book request:', error);
+      alert('There was an error submitting your request. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {

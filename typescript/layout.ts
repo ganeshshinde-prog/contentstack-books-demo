@@ -73,7 +73,7 @@ export type Posts = {
 export type HeaderProps = {
   locale:string;
   logo: Image;
-  navigation_menu:[List]
+  navigation_menu: List[];
   notification_bar: Announcement;
   title: string;
   uid: string;
@@ -121,7 +121,7 @@ export type FooterProps = {
   navigation: Navigation;
   copyright: string;
   locale: string, 
-  navigation_menu: [List];
+  navigation_menu: List[];
   notification_bar: Announcement; 
   uid: string;
   $: AdditionalParam;

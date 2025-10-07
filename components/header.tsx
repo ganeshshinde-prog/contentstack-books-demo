@@ -25,6 +25,27 @@ export default function Header() {
 
   function buildNavigation(ent: Entry, hd: HeaderProps) {
     let newHeader={...hd};
+    
+    // Fix existing navigation items first
+    if (newHeader.navigation_menu) {
+      newHeader.navigation_menu = newHeader.navigation_menu.map((navItem) => {
+        // Fix the New Arrivals URL if it's pointing to the wrong path
+        if (navItem.label === 'New Arrivals' && 
+            navItem.page_reference[0].url === '/new_arrivals/the-wheel-of-time') {
+          return {
+            ...navItem,
+            page_reference: [
+              { 
+                ...navItem.page_reference[0],
+                url: '/new_arrivals'
+              }
+            ] as [PageRef]
+          };
+        }
+        return navItem;
+      });
+    }
+    
     if (ent.length!== newHeader.navigation_menu.length) {
           ent.forEach((entry) => {
             const hFound = newHeader?.navigation_menu.find(

@@ -14,7 +14,7 @@ export default function RequestBookPage() {
     additionalNotes: ''
   });
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState<boolean | 'success' | 'inactive'>(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,11 +23,50 @@ export default function RequestBookPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setLoading(false);
-    setSubmitted(true);
-    console.log('Book request submitted:', formData);
+    
+    try {
+      // Send email notification to the customer using Contentstack automation
+      const emailResponse = await fetch('/api/send-book-request-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerEmail: formData.email,
+          bookTitle: formData.bookTitle,
+          author: formData.author,
+          isbn: formData.isbn,
+          quantity: formData.quantity,
+          phone: formData.phone,
+          additionalNotes: formData.additionalNotes,
+          customerName: formData.email.split('@')[0], // Extract name from email prefix
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error('Failed to send confirmation email');
+      }
+
+      const emailResult = await emailResponse.json();
+      console.log('Email response:', emailResult);
+      
+      if (emailResult.success === false && emailResult.data?.status === 'automation_inactive') {
+        // Handle automation inactive case
+        setSubmitted('inactive');
+      } else if (emailResult.success) {
+        // Handle successful email case
+        setSubmitted('success');
+      } else {
+        throw new Error(emailResult.message || 'Failed to process request');
+      }
+      
+      console.log('Book request submitted:', formData);
+    } catch (error) {
+      console.error('Error submitting book request:', error);
+      alert('There was an error submitting your request. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -234,6 +273,24 @@ export default function RequestBookPage() {
               <div className='success-icon'>✅</div>
               <h2>Request Submitted Successfully!</h2>
               <p>Thank you for your book request! We&apos;ve received your submission and will review it shortly.</p>
+              
+              {submitted === 'success' ? (
+                <div className='email-confirmation-notice'>
+                  <div className='confirmation-icon'>📧</div>
+                  <div className='confirmation-text'>
+                    <strong>Confirmation Email Sent!</strong>
+                    <p>A confirmation email has been sent to <strong>{formData.email}</strong> with your request details.</p>
+                  </div>
+                </div>
+              ) : submitted === 'inactive' ? (
+                <div className='email-confirmation-notice inactive'>
+                  <div className='confirmation-icon'>⚠️</div>
+                  <div className='confirmation-text'>
+                    <strong>Email Service Temporarily Unavailable</strong>
+                    <p>Your request has been saved successfully, but we couldn&apos;t send a confirmation email to <strong>{formData.email}</strong> right now. You&apos;ll still receive updates about your request status.</p>
+                  </div>
+                </div>
+              ) : null}
               
               <div className='success-details'>
                 <h3>Request Details:</h3>
