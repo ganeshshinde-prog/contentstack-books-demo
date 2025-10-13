@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { onEntryChange } from '../../contentstack-sdk';
-import { getBooksRes } from '../../helper';
 import Skeleton from 'react-loading-skeleton';
 import BookCard from '../../components/book-card';
+import PersonalizedRecommendations from '../../components/personalized-recommendations';
 import { useSearchParams } from 'next/navigation';
+import { usePersonalize, BookPersonalizationUtils } from '../../components/context/PersonalizeContext'; // New Launch hook
 import Link from 'next/link';
 
 interface Book {
@@ -30,19 +31,71 @@ function BooksContent() {
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const selectedGenre = searchParams.get('genre');
+  const personalizeSDK = usePersonalize(); // New Launch-compatible hook
 
   async function fetchData() {
     try {
-      const booksRes = await getBooksRes();
-      setBooks(booksRes);
+      console.log('🔍 BooksPage: Fetching via /api/books...');
+      
+      // Check for variant parameter from Launch Edge Proxy
+      const variantParam = searchParams.get('personalize_variants');
+      if (variantParam) {
+        console.log('🎭 Launch Edge Proxy variant parameter detected:', variantParam);
+      }
+      
+      const response = await fetch('/api/books');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.books) {
+        setBooks(data.books);
+        console.log('✅ BooksPage: Loaded', data.books.length, 'books');
+        
+        // Set user segment attributes based on available books
+        if (personalizeSDK) {
+          await setUserSegmentFromBooks(data.books);
+        }
+      } else {
+        throw new Error(data.error || 'Failed to load books');
+      }
+      
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching books:', error);
+      console.error('❌ BooksPage: Error fetching books:', error);
       setLoading(false);
     }
   }
 
+  // Set user segment attributes based on available books
+  const setUserSegmentFromBooks = async (availableBooks: Book[]) => {
+    if (!personalizeSDK) return;
+    
+    try {
+      const genres = Array.from(new Set(availableBooks.map(book => book.book_type).filter(Boolean)));
+      const avgPrice = availableBooks.reduce((sum, book) => sum + (book.price || 0), 0) / availableBooks.length;
+      
+      await BookPersonalizationUtils.setUserSegmentAttributes(personalizeSDK, 'book_browser', {
+        available_genres: genres.join(','),
+        avg_price_range: avgPrice > 400 ? 'premium' : 'budget',
+        catalog_size: availableBooks.length,
+        browsing_session: 'active'
+      });
+      
+      console.log('✅ User segment attributes set based on book catalog');
+    } catch (error) {
+      console.error('❌ Error setting user segment attributes:', error);
+    }
+  };
+
   // Filter books based on selected genre
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   useEffect(() => {
     if (books.length > 0) {
       if (selectedGenre) {
@@ -115,6 +168,9 @@ function BooksContent() {
             </div>
           )}
         </div>
+
+        {/* Personalized Recommendations - Show at the top after filters */}
+        <PersonalizedRecommendations />
 
         {/* Results */}
         <div className='books-results'>

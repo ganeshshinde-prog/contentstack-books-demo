@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import Header from "@/components/header";
+import { CartProvider } from "@/contexts/cart-context";
+import { PersonalizationProvider } from "@/contexts/personalization-context";
 
 import 'react-loading-skeleton/dist/skeleton.css';
 import Footer from "@/components/footer";
@@ -28,11 +31,11 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
-        <script
+        <Script
           src='https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js'
           integrity='sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM'
           crossOrigin='anonymous'
-          defer
+          strategy='lazyOnload'
         />
         <link rel='preconnect' href='https://fonts.gstatic.com' />
         <link
@@ -64,18 +67,31 @@ export default async function RootLayout({
           rel='stylesheet'
           href="/styles/third-party.css"
         />
-        
       </head>
       <body>
-        <>
-          <Header />
-          <main className='mainClass mt-5'>
-            <>
-              {children}
-            </>
-          </main>
-        </>
-        <Footer />
+        {/* Lytics Analytics Script */}
+        <Script id="lytics-analytics" strategy="afterInteractive">
+          {`
+            !function(){"use strict";var o=window.jstag||(window.jstag={}),r=[];function n(e){o[e]=function(){for(var n=arguments.length,t=new Array(n),i=0;i<n;i++)t[i]=arguments[i];r.push([e,t])}}n("send"),n("mock"),n("identify"),n("pageView"),n("unblock"),n("getid"),n("setid"),n("loadEntity"),n("getEntity"),n("on"),n("once"),n("call"),o.loadScript=function(n,t,i){var e=document.createElement("script");e.async=!0,e.src=n,e.onload=t,e.onerror=i;var o=document.getElementsByTagName("script")[0],r=o&&o.parentNode||document.head||document.body,c=o||r.lastChild;return null!=c?r.insertBefore(e,c):r.appendChild(e),this},o.init=function n(t){return this.config=t,this.loadScript(t.src,function(){if(o.init===n)throw new Error("Load error!");o.init(o.config),function(){for(var n=0;n<r.length;n++){var t=r[n][0],i=r[n][1];o[t].apply(o,i)}r=void 0}()}),this}}();
+            jstag.init({
+              src: 'https://c.lytics.io/api/tag/a577bd2ac71b22bda6f8abb9d1690285/latest.min.js'
+            });
+            jstag.pageView();
+          `}
+        </Script>
+
+        {/* Main Personalization Provider with SDK */}
+        <PersonalizationProvider>
+          <CartProvider>
+            <Header />
+            <main className='mainClass mt-5'>
+              <>
+                {children}
+              </>
+            </main>
+            <Footer />
+          </CartProvider>
+        </PersonalizationProvider>
       </body>
     </html>
   );

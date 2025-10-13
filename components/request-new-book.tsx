@@ -75,7 +75,7 @@ export default function RequestNewBook() {
   };
 
   return (
-    <section className='request-book-section'>
+    <section className='request-new-book-section'>
       <div className='max-width'>
         <div className='request-book-header'>
           <div className='request-icon'>📚</div>

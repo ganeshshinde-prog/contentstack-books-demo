@@ -33,11 +33,19 @@ function NewArrivalsContent() {
 
   async function fetchData() {
     try {
+      console.log('🔍 NEW_ARRIVALS PAGE: Starting fetch from NewBookInfo content type...');
       const booksRes = await getNewArrivalsRes();
+      console.log('📚 NEW_ARRIVALS PAGE: Received books:', booksRes.length, 'books from NewBookInfo');
+      console.log('📦 NEW_ARRIVALS PAGE: Sample book data:', booksRes[0] ? {
+        uid: booksRes[0].uid,
+        title: booksRes[0].title,
+        contentType: 'NewBookInfo'
+      } : 'No books received');
+      
       setBooks(booksRes);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching new arrivals:', error);
+      console.error('❌ NEW_ARRIVALS PAGE: Error fetching new arrivals:', error);
       setLoading(false);
     }
   }
@@ -154,7 +162,7 @@ function NewArrivalsContent() {
                 {filteredBooks.map((book) => (
                   <div key={book.uid} className='new-arrival-book'>
                     <div className='new-badge'>NEW</div>
-                    <BookCard book={book} />
+                    <BookCard book={book} isNewArrival={true} />
                   </div>
                 ))}
               </div>

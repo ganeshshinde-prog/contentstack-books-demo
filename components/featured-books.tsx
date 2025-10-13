@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { getBooksRes } from '../helper';
 import BookCard from './book-card';
 import Skeleton from 'react-loading-skeleton';
 import Link from 'next/link';
@@ -26,11 +25,25 @@ export default function FeaturedBooks() {
 
   async function fetchBooks() {
     try {
-      const booksRes = await getBooksRes();
-      setBooks(booksRes.slice(0, 2)); // Show only first 2 books as featured
+      console.log('🔍 FeaturedBooks: Fetching via /api/books...');
+      const response = await fetch('/api/books');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.books) {
+        setBooks(data.books.slice(0, 2)); // Show only first 2 books as featured
+        console.log('✅ FeaturedBooks: Loaded', data.books.length, 'books, showing first 2');
+      } else {
+        throw new Error(data.error || 'Failed to load books');
+      }
+      
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching featured books:', error);
+      console.error('❌ FeaturedBooks: Error fetching books:', error);
       setLoading(false);
     }
   }

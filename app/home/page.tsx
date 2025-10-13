@@ -15,6 +15,7 @@ import GenreCategories from "@/components/genre-categories";
 import ReadingQuotes from "@/components/reading-quotes";
 import ReadingStats from "@/components/reading-stats";
 import ScrollingBooks from "@/components/scrolling-books";
+import PersonalizedRecommendations from "@/components/personalized-recommendations";
 
 export default function HomePage() {
   const entryUrl = usePathname();

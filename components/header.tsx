@@ -9,12 +9,15 @@ import { onEntryChange } from '../contentstack-sdk';
 import { getAllEntries, getHeaderRes } from '../helper';
 import Skeleton from 'react-loading-skeleton';
 import { HeaderProps, Entry, NavLinks, PageRef } from "../typescript/layout";
+import { useCart } from "../contexts/cart-context";
+import SearchBar from "./search-bar";
 
 export default function Header() {
   const [header, setHeaderProp] = useState<HeaderProps | undefined>(undefined);
   const [entries, setEntries] = useState<Entry | undefined>(undefined);
   const pathname = usePathname();
   const [getHeader, setHeader] = useState(header);
+  const { getCartCount } = useCart();
 
   const fetchHeaderAndEntries = async () => {
     const headerRes = await getHeaderRes();
@@ -138,21 +141,11 @@ export default function Header() {
       </div>
       <div className='max-width header-div'>
         <div className='wrapper-logo'>
-          {headerData ? (
-            <Link legacyBehavior href='/'>
-              <a className='logo-tag' title='Contentstack'>
-                <img
-                  className='logo'
-                  src={headerData.logo.url}
-                  alt={headerData.title}
-                  title={headerData.title}
-                  {...headerData.logo.$?.url as {}}
-                />
-              </a>
-            </Link>
-          ) : (
-            <Skeleton width={150} />
-          )}
+          <Link legacyBehavior href='/'>
+            <a className='logo-tag' title='BookHaven'>
+              <span className='site-name'>BookHaven</span>
+            </a>
+          </Link>
         </div>
         <input className='menu-btn' type='checkbox' id='menu-btn' />
         <label className='menu-icon' htmlFor='menu-btn'>
@@ -181,6 +174,31 @@ export default function Header() {
             )}
           </ul>
         </nav>
+
+        {/* Search Bar - Similar to Crossword website */}
+        <div className='header-search'>
+          <SearchBar />
+        </div>
+
+        {/* Sign In and Cart Section - Inspired by Crossword */}
+        <div className='header-actions'>
+          <div className='user-actions'>
+            <Link 
+              href='/sign-in'
+              className='sign-in-btn'
+            >
+              <span className='user-icon'>👤</span>
+              <span className='sign-in-text'>SIGN IN</span>
+            </Link>
+            <Link 
+              href='/carts'
+              className='cart-btn'
+            >
+              <span className='cart-icon'>🛒</span>
+              <span className='cart-count'>{getCartCount()}</span>
+            </Link>
+          </div>
+        </div>
 
         {/* <div className='json-preview'>
           <Tooltip content='JSON Preview' direction='top' dynamic={false} delay={200} status={0}>
