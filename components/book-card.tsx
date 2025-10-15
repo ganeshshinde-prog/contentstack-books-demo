@@ -3,6 +3,7 @@ import Link from 'next/link';
 import parse from 'html-react-parser';
 import { useCart } from '../contexts/cart-context';
 import { usePersonalize, BookPersonalizationUtils } from './context/PersonalizeContext'; // New Launch-compatible hook
+import LyticsAnalytics from '../lib/lytics-analytics';
 
 interface Book {
   uid: string;
@@ -49,16 +50,40 @@ export default function BookCard({ book, isNewArrival = false }: BookCardProps) 
       inStock: true,
     });
     
+    // Track add to cart with Lytics
+    LyticsAnalytics.trackAddToCart({
+      book_id: book.uid,
+      book_title: book.title,
+      book_author: book.author,
+      book_genre: book.book_type,
+      book_price: book.price,
+      quantity: 1
+    });
+    
     // Show adding state briefly
     await new Promise(resolve => setTimeout(resolve, 500));
     setIsAdding(false);
   };
 
-  // Handle book click with Launch-compatible personalization
+  // Handle book click with Launch-compatible personalization + Lytics tracking
   const handleBookClick = async () => {
-    console.group('📚 BOOK CLICK - Launch Personalization');
+    console.group('📚 BOOK CLICK - Launch Personalization + Lytics');
     console.log('Book:', book.title, 'Genre:', book.book_type);
     
+    // Send Lytics book_viewed event using utility
+    LyticsAnalytics.trackBookView({
+      book_id: book.uid,
+      book_title: book.title,
+      book_author: book.author,
+      book_genre: book.book_type,
+      book_price: book.price,
+      book_pages: book.number_of_pages,
+      book_tags: book.tags,
+      is_new_arrival: isNewArrival,
+      page_type: 'book_card'
+    });
+    
+    // Continue with existing Contentstack personalization
     if (personalizeSDK && book.book_type) {
       // Set book genre attributes using Launch-compatible approach
       await BookPersonalizationUtils.setBookGenreAttributes(

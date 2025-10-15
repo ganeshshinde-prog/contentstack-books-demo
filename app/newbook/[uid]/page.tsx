@@ -67,8 +67,37 @@ export default function NewBookDetailPage() {
       console.log(`✅ NEWBOOK PAGE: Loaded book:`, bookData.title);
       setBook(bookData);
       
-      // Track book view for personalization
+      // Track book view for personalization and Lytics
       if (bookData.book_type) {
+        // Send Lytics book_viewed event
+        try {
+          if (typeof window !== 'undefined' && window.jstag) {
+            const lyticsEventData = {
+              event: 'book_viewed',
+              book_id: bookData.uid,
+              book_title: bookData.title,
+              book_author: bookData.author,
+              book_genre: bookData.book_type,
+              book_price: bookData.price,
+              book_pages: bookData.number_of_pages,
+              book_tags: bookData.tags,
+              is_new_arrival: true,
+              page_type: 'new_book_detail',
+              timestamp: new Date().toISOString(),
+              page_url: window.location.href,
+              page_title: document.title
+            };
+            
+            // Send event to Lytics default stream
+            window.jstag.send(lyticsEventData);
+            console.log('📊 Lytics book_viewed event sent from new book detail page:', lyticsEventData);
+          } else {
+            console.warn('⚠️ Lytics jstag not available on new book detail page');
+          }
+        } catch (error) {
+          console.error('❌ Error sending Lytics event from new book detail page:', error);
+        }
+        
         trackBehavior('view_book', {
           bookId: bookData.uid,
           bookTitle: bookData.title,

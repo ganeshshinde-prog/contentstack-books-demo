@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import LyticsAnalytics from '../lib/lytics-analytics';
 
 interface Book {
   uid: string;
@@ -90,6 +91,14 @@ export default function SearchBar() {
       );
 
       console.log('📚 Search results:', filteredBooks.length, 'books found');
+      
+      // Track search event with Lytics
+      LyticsAnalytics.trackSearch({
+        search_query: searchQuery,
+        search_results_count: filteredBooks.length,
+        search_category: 'books'
+      });
+      
       setResults(filteredBooks.slice(0, 8)); // Limit to 8 results
       setShowResults(true);
       

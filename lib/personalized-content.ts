@@ -72,7 +72,7 @@ export async function createPersonalizedRecommendations(
     // This prevents mixing unwanted genres when user has specific interests
     
     // Filter by multiple genre interests (Fantasy, War, etc.)
-    const genreInterests = [];
+    const genreInterests: string[] = [];
     if (userAttributes.Fantasy === true) genreInterests.push('Fantasy');
     if (userAttributes.War === true) genreInterests.push('War');
     if (userAttributes.Romance === true) genreInterests.push('Romance');

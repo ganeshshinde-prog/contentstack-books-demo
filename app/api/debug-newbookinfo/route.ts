@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNewArrivalsRes } from '@/helper';
 
+interface Book {
+  uid: string;
+  title: string;
+  author: string;
+  book_type: string;
+  price: number;
+  bookimage?: {
+    url: string;
+    title: string;
+  };
+  tags?: string[];
+}
+
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 DEBUG: Testing NewBookInfo fetch...');
@@ -12,7 +25,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       contentType: 'newbookinfo',
       count: books.length,
-      books: books.map(book => ({
+      books: books.map((book: Book) => ({
         uid: book.uid,
         title: book.title,
         author: book.author,
