@@ -19,6 +19,7 @@ export interface UserPreferences {
 // User behavior tracking
 export interface UserBehavior {
   viewedBooks: string[];
+  viewedGenres: string[]; // Track genres for Lytics personalization
   searchHistory: string[];
   purchaseHistory: string[];
   timeOnPage: Record<string, number>;
@@ -71,6 +72,7 @@ const defaultPreferences: UserPreferences = {
 // Default behavior tracking
 const defaultBehavior: UserBehavior = {
   viewedBooks: [],
+  viewedGenres: [], // Initialize empty array for genre tracking
   searchHistory: [],
   purchaseHistory: [],
   timeOnPage: {},
@@ -92,37 +94,68 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
     initializePersonalization();
   }, []);
 
-  // Load user data from localStorage on mount
+  // Load user data from localStorage on mount and listen for restoration events
   useEffect(() => {
-    const savedPreferences = localStorage.getItem('user-preferences');
-    const savedBehavior = localStorage.getItem('user-behavior');
-    
-    if (savedPreferences) {
-      try {
-        const prefs = JSON.parse(savedPreferences);
-        setUserPreferences(prefs);
-        setIsPersonalized(true);
-      } catch (error) {
-        console.error('Error loading preferences:', error);
+    const loadPersonalizationData = () => {
+      const savedPreferences = localStorage.getItem('user-preferences');
+      const savedBehavior = localStorage.getItem('user-behavior');
+      
+      if (savedPreferences) {
+        try {
+          const prefs = JSON.parse(savedPreferences);
+          setUserPreferences(prefs);
+          setIsPersonalized(true);
+          console.log('🔄 Loaded user preferences:', prefs.favoriteGenres);
+        } catch (error) {
+          console.error('Error loading preferences:', error);
+        }
       }
-    }
-    
-    if (savedBehavior) {
-      try {
-        const behavior = JSON.parse(savedBehavior);
-        setUserBehavior(behavior);
-      } catch (error) {
-        console.error('Error loading behavior:', error);
+      
+      if (savedBehavior) {
+        try {
+          const behavior = JSON.parse(savedBehavior);
+          setUserBehavior(behavior);
+          setIsPersonalized(true);
+          console.log('🔄 Loaded user behavior:', {
+            viewedBooks: behavior.viewedBooks?.length || 0,
+            viewedGenres: behavior.viewedGenres || [],
+            sessionCount: behavior.sessionCount || 1
+          });
+        } catch (error) {
+          console.error('Error loading behavior:', error);
+        }
+      } else {
+        // Initialize session for new users
+        console.log('🆕 NEW SESSION: Initializing user session');
+        setUserBehavior(prev => ({
+          ...prev,
+          sessionCount: 1,
+          lastVisit: new Date(),
+        }));
       }
-    } else {
-      // Initialize session for new users
-      console.log('🆕 NEW SESSION: Initializing user session');
-      setUserBehavior(prev => ({
-        ...prev,
-        sessionCount: 1,
-        lastVisit: new Date(),
-      }));
-    }
+    };
+
+    // Load data on mount
+    loadPersonalizationData();
+
+    // Listen for user personalization restoration events
+    const handlePersonalizationRestored = (event: CustomEvent) => {
+      console.log('🎯 User personalization restored - reloading data');
+      loadPersonalizationData();
+      
+      // Trigger recommendations refresh
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('personalizedRecommendationsRefresh', {
+          detail: { source: 'user_restoration', userId: event.detail.userId }
+        }));
+      }, 500);
+    };
+
+    window.addEventListener('userPersonalizationRestored', handlePersonalizationRestored as EventListener);
+
+    return () => {
+      window.removeEventListener('userPersonalizationRestored', handlePersonalizationRestored as EventListener);
+    };
   }, []);
 
   // Save to localStorage whenever data changes
@@ -178,7 +211,33 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
     }
   };
 
-  // Update Contentstack Personalize attributes based on user state using SDK
+  // Helper function for direct API calls with keepalive
+  const sendPersonalizeDataDirect = async (endpoint: string, data: any): Promise<void> => {
+    const projectUid = process.env.NEXT_PUBLIC_CONTENTSTACK_PERSONALIZE_PROJECT_UID;
+    const edgeApiUrl = process.env.NEXT_PUBLIC_CONTENTSTACK_PERSONALIZE_EDGE_API_URL;
+    
+    if (!projectUid || !edgeApiUrl) {
+      throw new Error('Missing Personalize configuration for direct API call');
+    }
+
+    const url = `${edgeApiUrl}/${endpoint}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CS-Personalize-Project-Uid': projectUid,
+      },
+      body: JSON.stringify(data),
+      keepalive: true, // Prevents cancellation during page navigation
+    });
+
+    if (!response.ok) {
+      throw new Error(`Direct API call failed: ${response.status} ${response.statusText}`);
+    }
+  };
+
+  // SIMPLIFIED: Only set book_genre attribute when needed
   const updatePersonalizeAttributes = async () => {
     if (!personalizeSDK || !personalizeSDK.isReady || !personalizeSDK.isReady()) {
       console.warn('⚠️ Personalize SDK not ready for attribute updates');
@@ -186,47 +245,9 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
     }
 
     try {
-      console.group('🎯 UPDATING PERSONALIZE ATTRIBUTES VIA SDK');
-      
-      const attributes: Record<string, any> = {
-        user_segment: userSegment,
-        personalization_level: isPersonalized ? 'active' : 'basic',
-        session_count: userBehavior.sessionCount,
-        viewed_books_count: userBehavior.viewedBooks.length,
-        purchase_count: userBehavior.purchaseHistory.length,
-      };
-
-      // Add genre preferences
-      if (userPreferences.favoriteGenres.length > 0) {
-        attributes.favorite_genres = userPreferences.favoriteGenres.join(',');
-        attributes.primary_genre = userPreferences.favoriteGenres[0];
-        
-        // Special handling for War genre (matching your setup)
-        if (userPreferences.favoriteGenres.includes('War')) {
-          attributes.war_interest = true;
-          attributes.military_history_fan = true;
-        }
-      }
-
-      // Add price preferences
-      if (userPreferences.priceRange) {
-        attributes.price_preference = userPreferences.priceRange.max > 500 ? 'premium' : 'budget';
-        attributes.max_price_range = userPreferences.priceRange.max;
-      }
-
-      // Add reading behavior
-      if (userBehavior.viewedBooks.length > 0) {
-        attributes.last_viewed_book = userBehavior.viewedBooks[userBehavior.viewedBooks.length - 1];
-        attributes.browsing_behavior = userBehavior.viewedBooks.length > 10 ? 'active_browser' : 'casual_browser';
-      }
-
-      console.log('📊 Setting Personalize attributes via SDK:', attributes);
-      
-      // Use SDK's set method instead of direct API call
-      await personalizeSDK.setUserAttributes(attributes);
-      console.log('✅ Personalize attributes updated successfully via SDK');
-      
-      console.groupEnd();
+      console.log('🎯 SIMPLIFIED: Skipping bulk attribute updates - only book_genre sent on book clicks');
+      // NOTE: book_genre is now ONLY sent via BookCard clicks, not here
+      // This prevents duplicate/unwanted attributes
     } catch (error) {
       console.error('❌ Failed to update Personalize attributes via SDK:', error);
       console.groupEnd();
@@ -237,15 +258,41 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
   const setPersonalizeAttributes = async (attributes: Record<string, any>): Promise<void> => {
     if (!personalizeSDK || !personalizeSDK.isReady || !personalizeSDK.isReady()) {
       console.warn('⚠️ Personalize SDK not available for setting custom attributes');
-      return;
+      
+      // Fallback: Try direct API call with keepalive
+      try {
+        await sendPersonalizeDataDirect('user-attributes', attributes);
+        console.log('✅ Attributes sent via direct API call');
+        return;
+      } catch (directError) {
+        console.error('❌ Direct API call also failed:', directError);
+        throw new Error('Personalize SDK not ready and direct call failed');
+      }
     }
 
     try {
       console.log('🎯 Setting custom Personalize attributes via SDK:', attributes);
-      await personalizeSDK.setUserAttributes(attributes);
+      
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Attribute request timeout')), 3000);
+      });
+      
+      const attributePromise = personalizeSDK.setUserAttributes(attributes);
+      
+      await Promise.race([attributePromise, timeoutPromise]);
       console.log('✅ Custom attributes set successfully via SDK');
     } catch (error) {
       console.error('❌ Failed to set custom attributes via SDK:', error);
+      
+      // Fallback to direct API call
+      try {
+        await sendPersonalizeDataDirect('user-attributes', attributes);
+        console.log('✅ Attributes sent via fallback direct API call');
+      } catch (directError) {
+        console.error('❌ Fallback direct API call also failed:', directError);
+        throw error;
+      }
     }
   };
 
@@ -253,15 +300,49 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
   const triggerPersonalizeEvent = async (eventName: string, data?: any): Promise<void> => {
     if (!personalizeSDK || !personalizeSDK.isReady || !personalizeSDK.isReady()) {
       console.warn('⚠️ Personalize SDK not available for event:', eventName);
-      return;
+      
+      // Fallback: Try direct API call with keepalive
+      try {
+        await sendPersonalizeDataDirect('events', { 
+          event: eventName, 
+          data: data || {},
+          timestamp: new Date().toISOString()
+        });
+        console.log('✅ Event sent via direct API call');
+        return;
+      } catch (directError) {
+        console.error('❌ Direct event API call also failed:', directError);
+        throw new Error('Personalize SDK not ready and direct call failed');
+      }
     }
 
     try {
       console.log('📊 Triggering Personalize event via SDK:', eventName, data);
-      await personalizeSDK.triggerEvent(eventName, data);
+      
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Event request timeout')), 3000);
+      });
+      
+      const eventPromise = personalizeSDK.triggerEvent(eventName);
+      
+      await Promise.race([eventPromise, timeoutPromise]);
       console.log('✅ Event triggered successfully via SDK');
     } catch (error) {
       console.error('❌ Failed to trigger event via SDK:', error);
+      
+      // Fallback to direct API call
+      try {
+        await sendPersonalizeDataDirect('events', { 
+          event: eventName, 
+          data: data || {},
+          timestamp: new Date().toISOString()
+        });
+        console.log('✅ Event sent via fallback direct API call');
+      } catch (directError) {
+        console.error('❌ Fallback direct event API call also failed:', directError);
+        throw error;
+      }
     }
   };
 
@@ -409,110 +490,27 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
       switch (action) {
         case 'view_book':
           updated.viewedBooks = Array.from(new Set([...prev.viewedBooks, data.bookId]));
+          
+          // Track viewed genres for Lytics personalization
+          if (data.genre) {
+            updated.viewedGenres = Array.from(new Set([...prev.viewedGenres, data.genre]));
+            console.log(`📖 Updated viewed genres for Lytics:`, updated.viewedGenres);
+          }
+          
           console.log(`📖 Updated viewed books:`, updated.viewedBooks);
           
-          // Auto-learn user preferences from viewed genres
-          if (data.genre && !userPreferences.favoriteGenres.includes(data.genre)) {
-            // If user has viewed 2+ books from same genre, add it to favorites
-            const genreViewCount = updated.viewedBooks.filter(bookId => {
-              // This is a simplified check - in a real app you'd track genre per book
-              return data.genre; // For now, we'll add the genre after 1 view for demo
-            }).length;
-            
-            if (genreViewCount >= 1) {
-              console.log(`🎓 AUTO-LEARNING: Adding "${data.genre}" to favorite genres`);
-              console.log(`📊 Genre view count for ${data.genre}:`, genreViewCount);
-              
-              setUserPreferences(prev => {
-                const newPrefs = {
-                  ...prev,
-                  favoriteGenres: [...prev.favoriteGenres, data.genre].slice(0, 5) // Limit to 5 genres
-                };
-                console.log(`📚 NEW FAVORITE GENRES:`, newPrefs.favoriteGenres);
-                return newPrefs;
-              });
-              
-              // Mark user as personalized when we auto-learn preferences
-              setIsPersonalized(true);
-              console.log(`✅ User marked as personalized due to auto-learning`);
-            }
-          } else if (data.genre && userPreferences.favoriteGenres.includes(data.genre)) {
-            console.log(`✅ Genre "${data.genre}" already in favorites:`, userPreferences.favoriteGenres);
-          }
+          // SIMPLIFIED: Skip auto-learning to prevent duplicate genres
+          // NOTE: We're only sending book_genre on individual clicks now
+          console.log(`📖 Book viewed: ${data.genre} (skipping auto-learning to prevent duplicates)`);
           
-          // Mark user as personalized after any book view (even without auto-learning)
-          if (!isPersonalized) {
-            console.log('🎯 User now personalized after first book interaction');
-            setIsPersonalized(true);
-          }
+          // Mark user as personalized when they view books
+          setIsPersonalized(true);
           
-          // Send book_viewed event to Contentstack Personalize (Enhanced Compass Starter approach)
-          console.group(`🚀 BOOK_VIEWED EVENT PROCESSING`);
-          console.log(`📊 Event Data:`, data);
-          console.log(`🎯 Personalize SDK Status:`, personalizeSDK ? 'Available' : 'Not Available');
-          console.log(`🏗️ Personalize SDK Object:`, personalizeSDK);
+          // SIMPLIFIED: Skip all Personalize SDK calls from trackBehavior
+          // NOTE: Only BookCard sends book_genre attribute now
+          console.log(`🔄 SIMPLIFIED: Skipping all Personalize SDK calls from trackBehavior`);
+          console.log(`📝 Note: Only BookCard handles book_genre attribute now`);
           
-          // Use new Compass Starter SDK if available (async operations)
-          (async () => {
-            try {
-              if (personalizeSDK && personalizeSDK.isReady && personalizeSDK.isReady()) {
-                console.log(`✅ Using Personalize SDK to send book_viewed event...`);
-                
-                // First set book genre attributes using SDK
-                await personalizeSDK.setBookGenreAttributes(data.genre, data.bookId);
-                
-                // Trigger the book_viewed event using SDK
-                await personalizeSDK.triggerEvent('book_viewed', {
-                  book_id: data.bookId,
-                  book_title: data.title,
-                  book_genre: data.genre,
-                  book_author: data.author,
-                  book_price: data.price,
-                  timestamp: new Date().toISOString(),
-                  user_segment: userSegment,
-                  user_preferences: userPreferences,
-                });
-                console.log(`✅ book_viewed event sent via Personalize SDK`);
-                
-                // Set user attributes based on book type using SDK methods
-                console.log(`🎯 Setting user attributes for book type: "${data.genre}"`);
-                const attributeSuccess = await personalizeSDK.setBookTypeAttributes(data.genre, data.bookId);
-                
-                if (attributeSuccess) {
-                  console.log(`✅ User attributes set successfully for genre: ${data.genre}`);
-                } else {
-                  console.warn(`⚠️ Failed to set user attributes for genre: ${data.genre}`);
-                }
-                
-              } else {
-                console.warn(`⚠️ Personalize SDK not available - logging event data instead`);
-                console.log(`📊 book_viewed event that would have been sent:`, {
-                  book_id: data.bookId,
-                  book_title: data.title,
-                  book_genre: data.genre,
-                  book_author: data.author,
-                  book_price: data.price,
-                  timestamp: new Date().toISOString(),
-                  user_segment: userSegment,
-                  user_preferences: userPreferences,
-                });
-                
-                console.log(`📊 User attributes that would have been set:`, {
-                  [data.genre]: true,
-                  [`reading_preference_${data.genre.toLowerCase()}`]: true,
-                  'last_viewed_genre': data.genre.toLowerCase(),
-                  'book_genre_interest': data.genre.toLowerCase(),
-                  'last_viewed_book': data.bookId,
-                  'last_viewed_book_type': data.genre.toLowerCase(),
-                });
-              }
-            } catch (error) {
-              console.error('❌ Error sending book_viewed event:', error);
-              console.error('❌ Error details:', (error as Error).message, (error as Error).stack);
-            } finally {
-              console.groupEnd();
-            }
-          })();
           
           break;
         case 'search':

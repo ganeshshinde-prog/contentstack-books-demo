@@ -311,45 +311,12 @@ class PersonalizeService {
   async setBookTypeAttributes(bookType: string, bookId?: string): Promise<boolean> {
     if (!bookType) return false;
 
+    // SIMPLIFIED: Send ONLY book_genre attribute
     const attributes: PersonalizeAttributes = {
-      // Set the book type as a boolean attribute (e.g., "War": true)
-      [bookType]: true,
-      
-      // Set reading preference  
-      [`reading_preference_${bookType.toLowerCase()}`]: true,
-      
-      // Track last viewed genre
-      'last_viewed_genre': bookType.toLowerCase(),
-      
-      // Set genre-specific attributes for better targeting
-      'book_genre_interest': bookType.toLowerCase(),
-      'current_genre_focus': bookType.toLowerCase(),
+      book_genre: bookType
     };
 
-    // Add genre-specific attributes for enhanced personalization
-    if (bookType.toLowerCase() === 'war') {
-      attributes.war_enthusiast = true;
-      attributes.military_history_interest = true;
-      attributes.historical_content_preference = 'military';
-    } else if (bookType.toLowerCase() === 'fantasy') {
-      attributes.fantasy_lover = true;
-      attributes.fictional_content_preference = 'fantasy';
-      attributes.imaginative_content_preference = true;
-    } else if (bookType.toLowerCase() === 'mystery') {
-      attributes.mystery_fan = true;
-      attributes.suspense_preference = true;
-      attributes.thriller_interest = true;
-    } else if (bookType.toLowerCase() === 'romance') {
-      attributes.romance_reader = true;
-      attributes.emotional_content_preference = true;
-    }
-
-    if (bookId) {
-      attributes['last_viewed_book'] = bookId;
-      attributes['last_viewed_book_type'] = bookType.toLowerCase();
-    }
-
-    console.log(`📚 Setting book type attributes for genre "${bookType}" using SDK:`, attributes);
+    console.log(`📚 Setting ONLY book_genre attribute for genre "${bookType}":`, attributes);
     return await this.setUserAttributes(attributes);
   }
 

@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '../../contexts/auth-context';
+import { useRouter } from 'next/navigation';
 
 export default function SignInPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,6 +16,15 @@ export default function SignInPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { login, signup, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -31,14 +42,24 @@ export default function SignInPage() {
         throw new Error('Passwords do not match');
       }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log('Form submitted:', formData);
-      // Add your authentication logic here
-      
-      // Redirect to home page after successful login/registration
-      window.location.href = '/';
+      let result;
+      if (isLogin) {
+        result = await login(formData.email, formData.password);
+      } else {
+        result = await signup({
+          fullName: formData.name,
+          email: formData.email,
+          phoneNumber: formData.phone || undefined,
+          password: formData.password
+        });
+      }
+
+      if (result.success) {
+        // Redirect to home page after successful login/registration
+        router.push('/');
+      } else {
+        setError(result.error || 'An error occurred. Please try again.');
+      }
     } catch (err: any) {
       setError(err.message || 'An error occurred. Please try again.');
     } finally {

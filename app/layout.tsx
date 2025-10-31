@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import Header from "@/components/header";
-import { CartProvider } from "@/contexts/cart-context";
-import { PersonalizationProvider } from "@/contexts/personalization-context";
+import Providers from "@/components/providers";
 
 import 'react-loading-skeleton/dist/skeleton.css';
 import Footer from "@/components/footer";
@@ -80,18 +79,22 @@ export default async function RootLayout({
           `}
         </Script>
 
-        {/* Main Personalization Provider with SDK */}
-        <PersonalizationProvider>
-          <CartProvider>
-            <Header />
-            <main className='mainClass mt-5'>
-              <>
-                {children}
-              </>
-            </main>
-            <Footer />
-          </CartProvider>
-        </PersonalizationProvider>
+        {/* Pathfora JS SDK for Lytics Experiences */}
+        <Script 
+          src="https://c.lytics.io/static/pathfora.min.js"
+          strategy="afterInteractive"
+        />
+
+        {/* Main Application Providers */}
+        <Providers>
+          <Header />
+          <main className='mainClass mt-5'>
+            <>
+              {children}
+            </>
+          </main>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );

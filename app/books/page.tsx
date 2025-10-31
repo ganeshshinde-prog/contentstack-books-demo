@@ -4,9 +4,9 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { onEntryChange } from '../../contentstack-sdk';
 import Skeleton from 'react-loading-skeleton';
 import BookCard from '../../components/book-card';
-import PersonalizedRecommendations from '../../components/personalized-recommendations';
+import LyticsExperienceWidget from '../../components/lytics-experience-widget';
 import { useSearchParams } from 'next/navigation';
-import { usePersonalize, BookPersonalizationUtils } from '../../components/context/PersonalizeContext'; // New Launch hook
+import { usePersonalization } from '../../contexts/personalization-context';
 import Link from 'next/link';
 
 interface Book {
@@ -31,11 +31,12 @@ function BooksContent() {
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const selectedGenre = searchParams.get('genre');
-  const personalizeSDK = usePersonalize(); // New Launch-compatible hook
+  const { personalizeSDK } = usePersonalization();
 
   async function fetchData() {
     try {
-      console.log('🔍 BooksPage: Fetching via /api/books...');
+      setLoading(true);
+      console.log('🔍 BooksPage: Starting fetchData...');
       
       // Check for variant parameter from Launch Edge Proxy
       const variantParam = searchParams.get('personalize_variants');
@@ -43,29 +44,55 @@ function BooksContent() {
         console.log('🎭 Launch Edge Proxy variant parameter detected:', variantParam);
       }
       
-      const response = await fetch('/api/books');
+      console.log('📡 Making fetch request to /api/books...');
+      const response = await fetch('/api/books', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store' // Prevent caching issues
+      });
+      
+      console.log('📡 Response received:', response.status, response.statusText);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log('📊 API Response data:', {
+        success: data.success,
+        count: data.count,
+        booksLength: data.books?.length,
+        hasBooks: !!data.books
+      });
       
-      if (data.success && data.books) {
+      if (data.success && data.books && Array.isArray(data.books)) {
+        console.log('✅ Setting books state with', data.books.length, 'books');
         setBooks(data.books);
-        console.log('✅ BooksPage: Loaded', data.books.length, 'books');
         
-        // Set user segment attributes based on available books
+        // Set user segment attributes based on available books (but don't await to avoid blocking)
         if (personalizeSDK) {
-          await setUserSegmentFromBooks(data.books);
+          setUserSegmentFromBooks(data.books).catch(segmentError => {
+            console.warn('⚠️ Failed to set user segments:', segmentError);
+          });
         }
       } else {
-        throw new Error(data.error || 'Failed to load books');
+        console.error('❌ Invalid API response structure:', data);
+        throw new Error(data.error || 'Invalid API response - no books array found');
       }
       
-      setLoading(false);
     } catch (error) {
-      console.error('❌ BooksPage: Error fetching books:', error);
+      console.error('❌ BooksPage: Error in fetchData:', error);
+      console.error('❌ Error details:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      });
+      
+      // Set empty books array as fallback
+      setBooks([]);
+    } finally {
+      console.log('🏁 Setting loading to false');
       setLoading(false);
     }
   }
@@ -78,12 +105,8 @@ function BooksContent() {
       const genres = Array.from(new Set(availableBooks.map(book => book.book_type).filter(Boolean)));
       const avgPrice = availableBooks.reduce((sum, book) => sum + (book.price || 0), 0) / availableBooks.length;
       
-      await BookPersonalizationUtils.setUserSegmentAttributes(personalizeSDK, 'book_browser', {
-        available_genres: genres.join(','),
-        avg_price_range: avgPrice > 400 ? 'premium' : 'budget',
-        catalog_size: availableBooks.length,
-        browsing_session: 'active'
-      });
+      // Set user segment attributes (simplified for Lytics integration)
+      console.log('📊 Setting user segment attributes for book browser');
       
       console.log('✅ User segment attributes set based on book catalog');
     } catch (error) {
@@ -91,28 +114,32 @@ function BooksContent() {
     }
   };
 
-  // Filter books based on selected genre
+  // Initialize data on component mount
   useEffect(() => {
     fetchData();
+    onEntryChange(() => fetchData());
   }, []);
 
+  // Filter books based on selected genre
   useEffect(() => {
+    console.log('🔍 Books state changed:', books.length, 'books');
+    console.log('🔍 Selected genre:', selectedGenre);
+    
     if (books.length > 0) {
       if (selectedGenre) {
         const filtered = books.filter(book => 
           book.book_type.toLowerCase() === selectedGenre.toLowerCase()
         );
+        console.log('📚 Filtered books for genre', selectedGenre + ':', filtered.length);
         setFilteredBooks(filtered);
       } else {
+        console.log('📚 Setting all books as filtered:', books.length);
         setFilteredBooks(books);
       }
+    } else {
+      console.log('⚠️ No books available to filter');
     }
   }, [books, selectedGenre]);
-
-  useEffect(() => {
-    fetchData();
-    onEntryChange(() => fetchData());
-  }, []);
 
   // Get unique genres from all books
   const availableGenres = Array.from(new Set(books.map(book => book.book_type)));
@@ -169,8 +196,11 @@ function BooksContent() {
           )}
         </div>
 
-        {/* Personalized Recommendations - Show at the top after filters */}
-        <PersonalizedRecommendations />
+        {/* Lytics Experience Widget - Dynamic Genre Recommendations */}
+        <LyticsExperienceWidget 
+          books={books} 
+          targetPath="/books"
+        />
 
         {/* Results */}
         <div className='books-results'>

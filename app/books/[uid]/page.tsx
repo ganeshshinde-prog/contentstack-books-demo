@@ -77,34 +77,49 @@ export default function BookDetailPage() {
               price: data.book.price
             });
             console.log(`📊 Tracking book view for personalization...`);
+            window.jstag.send({event: 'book_viewed', book_genre: data.book.book_type});
             
             // Send Lytics book_viewed event
-            try {
-              if (typeof window !== 'undefined' && window.jstag) {
-                const lyticsEventData = {
-                  event: 'book_viewed',
-                  book_id: data.book.uid,
-                  book_title: data.book.title,
-                  book_author: data.book.author,
-                  book_genre: data.book.book_type,
-                  book_price: data.book.price,
-                  book_pages: data.book.number_of_pages,
-                  book_tags: data.book.tags,
-                  page_type: 'book_detail',
-                  timestamp: new Date().toISOString(),
-                  page_url: window.location.href,
-                  page_title: document.title
-                };
+            // try {
+            //   if (typeof window !== 'undefined' && window.jstag) {
+            //     // book_genre: data.book.book_type,
+            //   //   { event: 'book_viewed',
+            //   //     book_id: data.book.uid,
+            //   //     book_title: data.book.title,
+            //   //     book_author: data.book.author,
+            //   //    book_genre: data.book.book_type ,
+            //   //     book_price: data.book.price,
+            //   //     book_pages: data.book.number_of_pages,
+            //   //     book_tags: data.book.tags,
+            //   //     page_type: 'book_detail',
+            //   //     timestamp: new Date().toISOString(),
+            //   //     page_url: window.location.href,
+            //   //     page_title: document.
+            //   // }
+            //       // const lyticsEventData = {
+            //       //   event: 'book_viewed',
+            //       //   book_id: data.book.uid,
+            //       //   book_title: data.book.title,
+            //       //   book_author: data.book.author,
+            //       //   book_genre: data.book.book_type,
+            //       //   book_price: data.book.price,
+            //       //   book_pages: data.book.number_of_pages,
+            //       //   book_tags: data.book.tags,
+            //       //   page_type: 'book_detail',
+            //       //   timestamp: new Date().toISOString(),
+            //       //   page_url: window.location.href,
+            //       //   page_title: document.title
+            //     };
                 
-                // Send event to Lytics default stream
-                window.jstag.send(lyticsEventData);
-                console.log('📊 Lytics book_viewed event sent from detail page:', lyticsEventData);
-              } else {
-                console.warn('⚠️ Lytics jstag not available on detail page');
-              }
-            } catch (error) {
-              console.error('❌ Error sending Lytics event from detail page:', error);
-            }
+            //     // Send event to Lytics default stream
+            //     window.jstag.send({event: 'book_viewed', book_genre: data.book.book_type});
+            //     // console.log('📊 Lytics book_viewed event sent from detail page:', lyticsEventData);
+            //   } else {
+            //     console.warn('⚠️ Lytics jstag not available on detail page');
+            //   }
+            // } catch (error) {
+            //   console.error('❌ Error sending Lytics event from detail page:', error);
+            // }
             
             trackBehavior('view_book', { 
               bookId: data.book.uid,

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {  usePathname } from 'next/navigation';
 import parse from 'html-react-parser';
@@ -10,7 +10,9 @@ import { getAllEntries, getHeaderRes } from '../helper';
 import Skeleton from 'react-loading-skeleton';
 import { HeaderProps, Entry, NavLinks, PageRef } from "../typescript/layout";
 import { useCart } from "../contexts/cart-context";
+import { useAuth } from "../contexts/auth-context";
 import SearchBar from "./search-bar";
+import AuthModal from "./auth-modal";
 
 export default function Header() {
   const [header, setHeaderProp] = useState<HeaderProps | undefined>(undefined);
@@ -18,6 +20,10 @@ export default function Header() {
   const pathname = usePathname();
   const [getHeader, setHeader] = useState(header);
   const { getCartCount } = useCart();
+  const { user, isAuthenticated, logout } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const fetchHeaderAndEntries = async () => {
     const headerRes = await getHeaderRes();
@@ -119,6 +125,23 @@ export default function Header() {
     fetchHeaderAndEntries();
   }, []);
 
+  // Handle click outside to close user menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    }
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
+
   useEffect(() => {
     if (header && entries) {
       onEntryChange(() => fetchData());
@@ -180,16 +203,50 @@ export default function Header() {
           <SearchBar />
         </div>
 
-        {/* Sign In and Cart Section - Inspired by Crossword */}
+        {/* Authentication and Cart Section */}
         <div className='header-actions'>
           <div className='user-actions'>
-            <Link 
-              href='/sign-in'
-              className='sign-in-btn'
-            >
-              <span className='user-icon'>👤</span>
-              <span className='sign-in-text'>SIGN IN</span>
-            </Link>
+            {isAuthenticated ? (
+              <div className='user-menu-container' ref={userMenuRef}>
+                <button 
+                  className='user-profile-btn'
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                >
+                  <span className='user-icon'>👤</span>
+                  <span className='user-name'>{user?.fullName?.split(' ')[0]}</span>
+                  <span className='dropdown-arrow'>▼</span>
+                </button>
+                
+                {showUserMenu && (
+                  <div className='user-dropdown'>
+                    <div className='user-info'>
+                      <div className='user-name-full'>{user?.fullName}</div>
+                      <div className='user-email'>{user?.email}</div>
+                    </div>
+                    <div className='dropdown-divider'></div>
+                    <Link href='/preferences' className='dropdown-item'>
+                      <span>📚</span> My Preferences
+                    </Link>
+                    <Link href='/carts' className='dropdown-item'>
+                      <span>🛒</span> My Cart ({getCartCount()})
+                    </Link>
+                    <div className='dropdown-divider'></div>
+                    <button onClick={logout} className='dropdown-item logout-btn'>
+                      <span>🚪</span> Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button 
+                className='sign-in-btn'
+                onClick={() => setShowAuthModal(true)}
+              >
+                <span className='user-icon'>👤</span>
+                <span className='sign-in-text'>SIGN IN</span>
+              </button>
+            )}
+            
             <Link 
               href='/carts'
               className='cart-btn'
@@ -199,6 +256,13 @@ export default function Header() {
             </Link>
           </div>
         </div>
+
+        {/* Authentication Modal */}
+        <AuthModal 
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          defaultMode="signin"
+        />
 
         {/* <div className='json-preview'>
           <Tooltip content='JSON Preview' direction='top' dynamic={false} delay={200} status={0}>

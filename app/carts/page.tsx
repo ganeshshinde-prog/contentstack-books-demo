@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useCart, CartItem } from '../../contexts/cart-context';
 
 export default function CartPage() {
-  const { cartItems, updateQuantity, removeFromCart } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, addToCart, clearCart } = useCart();
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoDiscount, setPromoDiscount] = useState(0);
@@ -50,6 +50,90 @@ export default function CartPage() {
     }
   };
 
+  // Helper function to add test items for checkout testing
+  const addTestItems = () => {
+    const testBooks = [
+      {
+        title: 'Band of Brothers',
+        author: 'Stephen E. Ambrose',
+        price: 299,
+        originalPrice: 399,
+        image: 'https://images.contentstack.io/v3/assets/blte1f8c41539d5f7e3/blt11801dbfc3008cad/68e6004b32b3a98c61f213db/band_of_brothers.jpeg',
+        isbn: 'test-war-book-1',
+        inStock: true,
+      },
+      {
+        title: 'The Art of War',
+        author: 'Sun Tzu',
+        price: 349,
+        originalPrice: 449,
+        image: 'https://images.contentstack.io/v3/assets/blte1f8c41539d5f7e3/blt11801dbfc3008cad/68e6004b32b3a98c61f213db/band_of_brothers.jpeg',
+        isbn: 'test-war-book-2',
+        inStock: true,
+      }
+    ];
+
+    testBooks.forEach(book => {
+      addToCart(book);
+    });
+  };
+
+  // Helper function to add Fantasy books for testing
+  const addFantasyBooks = () => {
+    const fantasyBooks = [
+      {
+        title: 'The Lord of the Rings',
+        author: 'J.R.R. Tolkien',
+        price: 599,
+        originalPrice: 799,
+        image: 'https://images.contentstack.io/v3/assets/blte1f8c41539d5f7e3/blt11801dbfc3008cad/68e6004b32b3a98c61f213db/band_of_brothers.jpeg',
+        isbn: 'test-fantasy-book-1',
+        inStock: true,
+      },
+      {
+        title: 'Harry Potter and the Magic Stone',
+        author: 'J.K. Rowling',
+        price: 449,
+        originalPrice: 599,
+        image: 'https://images.contentstack.io/v3/assets/blte1f8c41539d5f7e3/blt11801dbfc3008cad/68e6004b32b3a98c61f213db/band_of_brothers.jpeg',
+        isbn: 'test-fantasy-book-2',
+        inStock: true,
+      }
+    ];
+
+    fantasyBooks.forEach(book => {
+      addToCart(book);
+    });
+  };
+
+  // Helper function to add Mystery books for testing
+  const addMysteryBooks = () => {
+    const mysteryBooks = [
+      {
+        title: 'The Murder of Roger Ackroyd',
+        author: 'Agatha Christie',
+        price: 399,
+        originalPrice: 499,
+        image: 'https://images.contentstack.io/v3/assets/blte1f8c41539d5f7e3/blt11801dbfc3008cad/68e6004b32b3a98c61f213db/band_of_brothers.jpeg',
+        isbn: 'test-mystery-book-1',
+        inStock: true,
+      },
+      {
+        title: 'Sherlock Holmes Complete Collection',
+        author: 'Arthur Conan Doyle',
+        price: 549,
+        originalPrice: 699,
+        image: 'https://images.contentstack.io/v3/assets/blte1f8c41539d5f7e3/blt11801dbfc3008cad/68e6004b32b3a98c61f213db/band_of_brothers.jpeg',
+        isbn: 'test-mystery-book-2',
+        inStock: true,
+      }
+    ];
+
+    mysteryBooks.forEach(book => {
+      addToCart(book);
+    });
+  };
+
   return (
     <div className='cart-page'>
       <div className='max-width'>
@@ -66,6 +150,93 @@ export default function CartPage() {
               <span className='empty-cart-icon-large'>🛒</span>
               <h2>Your cart is empty</h2>
               <p>Looks like you haven&apos;t added any books to your cart yet.</p>
+              
+              {/* Test Button for Checkout Testing */}
+        <div style={{ margin: '1.5rem 0' }}>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            <button
+              onClick={() => clearCart()}
+              style={{
+                background: '#6c757d',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = '#5a6268'}
+              onMouseOut={(e) => e.currentTarget.style.background = '#6c757d'}
+            >
+              🗑️ Clear Cart
+            </button>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={addTestItems}
+              style={{
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = '#c82333'}
+              onMouseOut={(e) => e.currentTarget.style.background = '#dc3545'}
+            >
+              ⚔️ Add War Books
+            </button>
+            
+            <button
+              onClick={addFantasyBooks}
+              style={{
+                background: '#6f42c1',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = '#5a32a3'}
+              onMouseOut={(e) => e.currentTarget.style.background = '#6f42c1'}
+            >
+              🧙‍♂️ Add Fantasy Books
+            </button>
+            
+            <button
+              onClick={addMysteryBooks}
+              style={{
+                background: '#fd7e14',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = '#e8690b'}
+              onMouseOut={(e) => e.currentTarget.style.background = '#fd7e14'}
+            >
+              🔍 Add Mystery Books
+            </button>
+          </div>
+          <p style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem' }}>
+            Use these buttons to test genre-specific purchase tracking
+          </p>
+        </div>
+              
               <Link href='/books' className='btn primary-btn'>
                 Continue Shopping
               </Link>
@@ -166,6 +337,27 @@ export default function CartPage() {
               </div>
 
               {/* Order Summary */}
+              <div style={{ marginBottom: '1rem' }}>
+                <button
+                  onClick={() => clearCart()}
+                  style={{
+                    background: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#5a6268'}
+                  onMouseOut={(e) => e.currentTarget.style.background = '#6c757d'}
+                >
+                  🗑️ Clear All Items
+                </button>
+              </div>
+
               <div className='order-summary'>
                 <h3>Order Summary</h3>
 
@@ -231,9 +423,9 @@ export default function CartPage() {
                 </div>
 
                 {/* Checkout Button */}
-                <button className='checkout-btn-large'>
+                <Link href="/checkout" className='checkout-btn-large'>
                   Proceed to Checkout
-                </button>
+                </Link>
 
                 {/* Trust Indicators */}
                 <div className='checkout-trust'>

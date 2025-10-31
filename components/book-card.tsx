@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import Link from 'next/link';
 import parse from 'html-react-parser';
 import { useCart } from '../contexts/cart-context';
-import { usePersonalize, BookPersonalizationUtils } from './context/PersonalizeContext'; // New Launch-compatible hook
+import { usePersonalization } from '../contexts/personalization-context';
 import LyticsAnalytics from '../lib/lytics-analytics';
 
 interface Book {
@@ -23,21 +22,19 @@ interface Book {
 
 interface BookCardProps {
   book: Book;
-  isNewArrival?: boolean; // New prop to indicate if this is from new arrivals
+  isNewArrival?: boolean;
 }
 
 export default function BookCard({ book, isNewArrival = false }: BookCardProps) {
   const { addToCart } = useCart();
   const [isAdding, setIsAdding] = useState(false);
-  const personalizeSDK = usePersonalize(); // New Launch-compatible hook
+  const { personalizeSDK, setPersonalizeAttributes, triggerPersonalizeEvent, trackBehavior } = usePersonalization();
 
-  // Determine the correct link based on whether it's a new arrival
   const bookLink = isNewArrival ? `/newbook/${book.uid}` : `/books/${book.uid}`;
 
   const handleAddToCart = async () => {
     setIsAdding(true);
     
-    // Calculate original price (assuming 20-30% discount for demo)
     const originalPrice = Math.round(book.price * 1.25);
     
     addToCart({
@@ -46,7 +43,7 @@ export default function BookCard({ book, isNewArrival = false }: BookCardProps) 
       price: book.price,
       originalPrice: originalPrice,
       image: book.bookimage.url,
-      isbn: book.uid, // Using uid as ISBN for demo
+      isbn: book.uid,
       inStock: true,
     });
     
@@ -60,17 +57,47 @@ export default function BookCard({ book, isNewArrival = false }: BookCardProps) 
       quantity: 1
     });
     
-    // Show adding state briefly
     await new Promise(resolve => setTimeout(resolve, 500));
     setIsAdding(false);
   };
 
-  // Handle book click with Launch-compatible personalization + Lytics tracking
-  const handleBookClick = async () => {
-    console.group('📚 BOOK CLICK - Launch Personalization + Lytics');
+  const handleBookClick = () => {
+    console.group('📚 BOOK CLICK - Personalization + Lytics');
     console.log('Book:', book.title, 'Genre:', book.book_type);
     
-    // Send Lytics book_viewed event using utility
+          // Track behavior for Lytics personalization (genre tracking)
+          trackBehavior('view_book', {
+            bookId: book.uid,
+            genre: book.book_type,
+            title: book.title,
+            author: book.author,
+            price: book.price
+          });
+
+          // Dispatch custom event for any genre book to update recommendations
+          console.log(`🎯 ${book.book_type} book clicked - dispatching custom event for recommendations update`);
+          const genreBookEvent = new CustomEvent('genreBookClicked', {
+            detail: {
+              bookId: book.uid,
+              title: book.title,
+              genre: book.book_type
+            }
+          });
+          window.dispatchEvent(genreBookEvent);
+
+          // Also dispatch specific genre event for backward compatibility
+          if (book.book_type === 'War') {
+            const warBookEvent = new CustomEvent('warBookClicked', {
+              detail: {
+                bookId: book.uid,
+                title: book.title,
+                genre: book.book_type
+              }
+            });
+            window.dispatchEvent(warBookEvent);
+          }
+    
+    // Send Lytics book_viewed event
     LyticsAnalytics.trackBookView({
       book_id: book.uid,
       book_title: book.title,
@@ -83,36 +110,82 @@ export default function BookCard({ book, isNewArrival = false }: BookCardProps) 
       page_type: 'book_card'
     });
     
-    // Continue with existing Contentstack personalization
+    // Contentstack personalization - send only book_genre
     if (personalizeSDK && book.book_type) {
-      // Set book genre attributes using Launch-compatible approach
-      await BookPersonalizationUtils.setBookGenreAttributes(
-        personalizeSDK, 
-        book.book_type, 
-        book.uid
-      );
+      console.log('✅ Sending book_genre attribute:', book.book_type);
       
-      // Trigger book view event
-      await BookPersonalizationUtils.triggerBookEvent(personalizeSDK, 'bookViewed', {
-        book_id: book.uid,
-        book_title: book.title,
-        book_genre: book.book_type,
-        book_author: book.author,
-        book_price: book.price,
-        timestamp: new Date().toISOString(),
+      // Set book_genre attribute and trigger event with proper async handling
+      const sendPersonalizationData = async () => {
+        try {
+          // Send both requests in parallel with timeout protection
+          await Promise.all([
+            setPersonalizeAttributes({
+              book_genre: book.book_type
+            }),
+            triggerPersonalizeEvent('book_viewed', {
+              book_id: book.uid,
+              book_title: book.title,
+              book_genre: book.book_type,
+              book_author: book.author,
+              book_price: book.price,
+              timestamp: new Date().toISOString(),
+            })
+          ]);
+          
+          console.log('✅ Personalization complete - both attribute and event sent');
+          return true;
+        } catch (error) {
+          console.error('❌ Personalization failed:', error);
+          
+                // Fallback: Use sendBeacon for critical tracking if available
+                if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+            try {
+              const fallbackData = {
+                event: 'book_viewed',
+                book_genre: book.book_type,
+                book_id: book.uid,
+                timestamp: new Date().toISOString()
+              };
+              
+              // Note: This would need a server endpoint to handle beacon data
+              console.log('📡 Attempting fallback with sendBeacon:', fallbackData);
+            } catch (beaconError) {
+              console.error('❌ Beacon fallback also failed:', beaconError);
+            }
+          }
+          
+          return false;
+        }
+      };
+      
+      // Execute personalization and navigate
+      sendPersonalizationData().finally(() => {
+        // Navigate after a small delay regardless of success/failure
+        setTimeout(() => {
+          window.location.href = bookLink;
+        }, 150); // Slightly longer delay to ensure completion
       });
       
-      console.log('✅ Launch personalization attributes and events set');
     } else {
       console.warn('⚠️ Personalize SDK not available or book type missing');
+      console.warn('   - personalizeSDK:', !!personalizeSDK);
+      console.warn('   - book.book_type:', book.book_type);
+      
+      console.groupEnd();
+      
+      // Navigate immediately if no personalization
+      window.location.href = bookLink;
     }
-    
-    console.groupEnd();
   };
+
   return (
-    <div className='book-card' {...book.$?.title}>
-      {/* Clickable area for book details */}
-      <Link href={bookLink} className="book-card-link" onClick={handleBookClick}>
+    <div 
+      className='book-card' 
+      {...book.$?.title}
+      onClick={handleBookClick}
+      style={{ cursor: 'pointer' }}
+    >
+      <div className="book-card-content">
         <div className='book-image-container'>
           {book.bookimage?.url ? (
             <img
@@ -159,27 +232,13 @@ export default function BookCard({ book, isNewArrival = false }: BookCardProps) 
             </div>
             
             <div className='book-price'>
-              <span className='detail-label'>Price:</span>
-              <span className='detail-value price' {...book.$?.price}>
-                {book.price ? `₹${book.price}` : 'Price not available'}
+              <span className='current-price' {...book.$?.price}>
+                ₹{book.price || 'N/A'}
               </span>
             </div>
           </div>
-          
-          {book.tags && Array.isArray(book.tags) && book.tags.length > 0 && (
-            <div className='book-tags'>
-              {book.tags.map((tag, index) => (
-                <span key={index} className='book-tag'>
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
-      </Link>
-
-      {/* Add to Cart Button - Outside the link to prevent navigation */}
-      <div className='book-actions'>
+        
         <button 
           className={`add-to-cart-btn ${isAdding ? 'adding' : ''}`}
           onClick={(e) => {

@@ -73,7 +73,7 @@ async function getPersonalizeInstance(): Promise<Sdk | null> {
 // Utility functions for book-based personalization
 export const BookPersonalizationUtils = {
   /**
-   * Set attributes based on book genre viewing behavior
+   * Set attributes based on book genre viewing behavior (OPTIMIZED - Single API Call)
    */
   async setBookGenreAttributes(sdk: Sdk | null, genre: string, bookId?: string) {
     if (!sdk) {
@@ -82,39 +82,17 @@ export const BookPersonalizationUtils = {
     }
     
     try {
-      console.log(`🎯 Setting book genre attributes for: ${genre}`);
+      console.log(`🎯 Setting ONLY book_genre attribute for: ${genre}`);
       
+      // SIMPLIFIED: Send ONLY book_genre attribute
       const attributes: Record<string, any> = {
-        book_genre_interest: genre.toLowerCase(),
-        last_viewed_genre: genre.toLowerCase(),
-        reading_preference: genre.toLowerCase(),
+        book_genre: genre
       };
       
-      if (bookId) {
-        attributes.last_viewed_book = bookId;
-      }
-      
-      // Special attributes for War genre (matching your setup)
-      if (genre.toLowerCase() === 'war') {
-        attributes.war_enthusiast = true;
-        attributes.military_history_interest = true;
-        attributes.historical_content_preference = 'military';
-      }
-      
-      // Set fantasy attributes
-      if (genre.toLowerCase() === 'fantasy') {
-        attributes.fantasy_lover = true;
-        attributes.fictional_content_preference = 'fantasy';
-      }
-      
-      // Set mystery attributes
-      if (genre.toLowerCase() === 'mystery') {
-        attributes.mystery_fan = true;
-        attributes.suspense_preference = true;
-      }
-      
+      console.log('🚀 SENDING TO CONTENTSTACK PERSONALIZE (SIMPLIFIED):', attributes);
+      console.log('🔍 book_genre value:', attributes.book_genre);
       await sdk.set(attributes);
-      console.log('✅ Book genre attributes set successfully:', attributes);
+      console.log('✅ book_genre attribute sent successfully:', attributes);
     } catch (error) {
       console.error('❌ Failed to set book genre attributes:', error);
     }
@@ -192,7 +170,14 @@ export const BookPersonalizationUtils = {
     
     try {
       console.log(`📊 Triggering event: ${eventKey}`, eventData);
-      await sdk.triggerEvent(eventKey);
+      
+      // Convert eventKey to proper format (bookViewed -> book_viewed)
+      const properEventKey = eventKey === 'bookViewed' ? 'book_viewed' : eventKey;
+      console.log(`🔄 Using event key: ${properEventKey}`);
+      console.log(`📊 Event data (for logging):`, eventData);
+      
+      // Trigger the event (SDK only accepts event key, not data)
+      await sdk.triggerEvent(properEventKey);
       console.log('✅ Event triggered successfully');
     } catch (error) {
       console.error('❌ Failed to trigger event:', error);
