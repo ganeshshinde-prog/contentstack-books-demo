@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { personalizeService, PersonalizeUtils } from '../services/personalize';
+import { migrateLocalStorage } from '../utils/localstorage-migration';
 
 // User preference types
 export interface UserPreferences {
@@ -96,6 +97,9 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
 
   // Load user data from localStorage on mount and listen for restoration events
   useEffect(() => {
+    // Run localStorage migration first to fix any corrupted data
+    migrateLocalStorage();
+    
     const loadPersonalizationData = () => {
       const savedPreferences = localStorage.getItem('user-preferences');
       const savedBehavior = localStorage.getItem('user-behavior');

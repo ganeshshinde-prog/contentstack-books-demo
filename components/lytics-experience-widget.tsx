@@ -100,41 +100,64 @@ export default function LyticsExperienceWidget({
     try {
       if (typeof window === 'undefined') return null;
       
+      console.log('🔍 Checking user genre preferences...');
       const behaviorData = localStorage.getItem('user-behavior');
       const preferencesData = localStorage.getItem('user-preferences');
       
+      console.log('📊 Raw behavior data:', behaviorData ? 'exists' : 'not found');
+      console.log('📊 Raw preferences data:', preferencesData ? 'exists' : 'not found');
+      
       // Check viewed genres from behavior
       if (behaviorData) {
-        const behavior = JSON.parse(behaviorData);
-        const viewedGenres = behavior.viewedGenres || [];
-        
-        // Return the most recently viewed genre that we have an experience for
-        for (let i = viewedGenres.length - 1; i >= 0; i--) {
-          const genre = viewedGenres[i];
-          if (GENRE_EXPERIENCES[genre]) {
-            console.log(`🎯 User recently viewed ${genre} books - using ${genre} experience`);
-            return genre;
+        try {
+          const behavior = JSON.parse(behaviorData);
+          console.log('📖 Parsed behavior:', behavior);
+          
+          // Ensure viewedGenres is an array
+          const viewedGenres = Array.isArray(behavior.viewedGenres) ? behavior.viewedGenres : [];
+          console.log('👀 Viewed genres:', viewedGenres);
+          console.log('🎯 Available experiences:', Object.keys(GENRE_EXPERIENCES));
+          
+          // Return the most recently viewed genre that we have an experience for
+          for (let i = viewedGenres.length - 1; i >= 0; i--) {
+            const genre = viewedGenres[i];
+            console.log(`🔍 Checking genre: ${genre}, has experience: ${!!GENRE_EXPERIENCES[genre]}`);
+            if (GENRE_EXPERIENCES[genre]) {
+              console.log(`✅ User recently viewed ${genre} books - using ${genre} experience`);
+              return genre;
+            }
           }
+        } catch (parseError) {
+          console.error('❌ Error parsing behavior data:', parseError);
         }
       }
       
       // Check favorite genres from preferences
       if (preferencesData) {
-        const preferences = JSON.parse(preferencesData);
-        const favoriteGenres = preferences.favoriteGenres || [];
-        
-        // Return the first favorite genre that we have an experience for
-        for (const genre of favoriteGenres) {
-          if (GENRE_EXPERIENCES[genre]) {
-            console.log(`🎯 User has ${genre} in favorites - using ${genre} experience`);
-            return genre;
+        try {
+          const preferences = JSON.parse(preferencesData);
+          console.log('⭐ Parsed preferences:', preferences);
+          
+          const favoriteGenres = Array.isArray(preferences.favoriteGenres) ? preferences.favoriteGenres : [];
+          console.log('⭐ Favorite genres:', favoriteGenres);
+          
+          // Return the first favorite genre that we have an experience for
+          for (const genre of favoriteGenres) {
+            console.log(`🔍 Checking favorite genre: ${genre}, has experience: ${!!GENRE_EXPERIENCES[genre]}`);
+            if (GENRE_EXPERIENCES[genre]) {
+              console.log(`✅ User has ${genre} in favorites - using ${genre} experience`);
+              return genre;
+            }
           }
+        } catch (parseError) {
+          console.error('❌ Error parsing preferences data:', parseError);
         }
       }
       
+      console.log('❌ No matching genre found, returning null');
       return null;
     } catch (error) {
-      console.error('Error getting user preferred genre:', error);
+      console.error('❌ Error getting user preferred genre:', error);
       return null;
     }
   };
@@ -172,23 +195,40 @@ export default function LyticsExperienceWidget({
 
   // Get curated books with preference for user's preferred genre
   const getCuratedBooks = () => {
+    console.group('📚 Getting Curated Books');
     const booksWithImages = books.filter((book: any) => book.featured_image?.url || book.bookimage?.url);
+    console.log(`📖 Total books with images: ${booksWithImages.length}`);
     
     const preferredGenre = getUserPreferredGenre();
+    console.log(`🎯 Preferred genre: ${preferredGenre || 'none'}`);
     
-    if (preferredGenre && checkUserGenreInteraction(preferredGenre)) {
-      console.log(`📚 Prioritizing ${preferredGenre} books for recommendations`);
+    if (preferredGenre) {
+      const hasInteraction = checkUserGenreInteraction(preferredGenre);
+      console.log(`👆 Has ${preferredGenre} interaction: ${hasInteraction}`);
       
-      // Prioritize books of the preferred genre
-      const preferredGenreBooks = booksWithImages.filter((book: any) => book.book_type === preferredGenre);
-      const otherBooks = booksWithImages.filter((book: any) => book.book_type !== preferredGenre);
-      
-      return [...preferredGenreBooks, ...otherBooks].slice(0, 4);
+      if (hasInteraction) {
+        console.log(`📚 Prioritizing ${preferredGenre} books for recommendations`);
+        
+        // Prioritize books of the preferred genre
+        const preferredGenreBooks = booksWithImages.filter((book: any) => book.book_type === preferredGenre);
+        const otherBooks = booksWithImages.filter((book: any) => book.book_type !== preferredGenre);
+        
+        console.log(`✅ Found ${preferredGenreBooks.length} ${preferredGenre} books`);
+        console.log(`📚 Found ${otherBooks.length} other books`);
+        
+        const result = [...preferredGenreBooks, ...otherBooks].slice(0, 4);
+        console.log(`🎁 Returning ${result.length} books:`, result.map(b => `${b.title} (${b.book_type})`));
+        console.groupEnd();
+        return result;
+      }
     }
     
     // Otherwise show first 4 books with images
     console.log('📚 No specific genre preference, showing default recommendations');
-    return booksWithImages.slice(0, 4);
+    const result = booksWithImages.slice(0, 4);
+    console.log(`🎁 Returning ${result.length} default books:`, result.map(b => `${b.title} (${b.book_type})`));
+    console.groupEnd();
+    return result;
   };
 
   // Get the current active experience ID based on user's preferred genre
