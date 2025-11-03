@@ -101,8 +101,8 @@ class LyticsPersonalization {
           window.jstag.call('getAudiences', (audiences: any) => {
             const userData = {
               audiences: audiences || [],
-              attributes: window.jstag.call('getAttributes') || {},
-              session_data: window.jstag.call('getSessionData') || {}
+              attributes: window.jstag?.call('getAttributes') || {},
+              session_data: window.jstag?.call('getSessionData') || {}
             };
             resolve(userData);
           });

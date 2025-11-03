@@ -13,10 +13,10 @@ interface JsTag {
   getid: () => string | null;
   setid: (id: string) => void;
   loadEntity: (entityId: string) => Promise<any>;
-  getEntity: (entityId: string) => any;
+  getEntity: (callback: (entity: any) => void) => void;
   on: (event: string, callback: Function) => void;
   once: (event: string, callback: Function) => void;
-  call: (method: string, ...args: any[]) => any;
+  call: (method: string, callback?: (data: any) => void) => any;
   init: (config: { src: string }) => void;
   loadScript: (src: string, onload?: Function, onerror?: Function) => void;
   config?: any;
@@ -24,7 +24,7 @@ interface JsTag {
 
 declare global {
   interface Window {
-    jstag: JsTag;
+    jstag?: JsTag;
   }
 }
 

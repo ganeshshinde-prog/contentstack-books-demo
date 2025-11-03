@@ -60,8 +60,10 @@ class LyticsAnalytics {
         ...eventData
       };
 
-      window.jstag.send(enrichedData);
-      console.log(`📊 Lytics ${eventName} event sent:`, enrichedData);
+      if (window.jstag) {
+        window.jstag.send(enrichedData);
+        console.log(`📊 Lytics ${eventName} event sent:`, enrichedData);
+      }
     } catch (error) {
       console.error(`❌ Error sending Lytics ${eventName} event:`, error);
     }

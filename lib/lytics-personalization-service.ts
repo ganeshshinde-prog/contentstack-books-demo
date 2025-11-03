@@ -5,19 +5,7 @@
  * and power personalization based on Lytics-determined user segments
  */
 
-// Extend Window interface
-declare global {
-  interface Window {
-    jstag?: {
-      send: (data: any) => void;
-      pageView: () => void;
-      getid: () => string | null;
-      call: (method: string, callback: (data: any) => void) => void;
-      getEntity: (callback: (entity: any) => void) => void;
-    };
-    pathfora?: any;
-  }
-}
+// Window interface extensions are defined in types/lytics.d.ts
 
 export interface LyticsAudience {
   id: string;
@@ -104,6 +92,12 @@ class LyticsPersonalizationService {
 
     return new Promise((resolve) => {
       console.log('🔄 Fetching user data from Lytics...');
+      
+      if (!window.jstag) {
+        console.warn('⚠️ jstag not available in refreshUserData');
+        resolve();
+        return;
+      }
       
       // Get user entity (profile) from Lytics
       window.jstag.call('getEntity', (entity: any) => {

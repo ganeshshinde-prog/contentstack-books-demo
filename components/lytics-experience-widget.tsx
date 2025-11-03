@@ -7,7 +7,6 @@ import lyticsPersonalization from '../lib/lytics-personalization-service';
 declare global {
   interface Window {
     pathfora?: any;
-    jstag?: any;
   }
 }
 

@@ -77,7 +77,9 @@ export default function BookDetailPage() {
               price: data.book.price
             });
             console.log(`📊 Tracking book view for personalization...`);
-            window.jstag.send({event: 'book_viewed', book_genre: data.book.book_type});
+            if (typeof window !== 'undefined' && window.jstag) {
+              window.jstag.send({event: 'book_viewed', book_genre: data.book.book_type});
+            }
             
             // Send Lytics book_viewed event
             // try {
