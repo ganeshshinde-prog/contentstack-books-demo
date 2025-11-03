@@ -114,15 +114,29 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
       if (savedBehavior) {
         try {
           const behavior = JSON.parse(savedBehavior);
-          setUserBehavior(behavior);
+          // Ensure viewedGenres is always an array to prevent "not iterable" errors
+          const sanitizedBehavior = {
+            ...behavior,
+            viewedBooks: Array.isArray(behavior.viewedBooks) ? behavior.viewedBooks : [],
+            viewedGenres: Array.isArray(behavior.viewedGenres) ? behavior.viewedGenres : [],
+            searchHistory: Array.isArray(behavior.searchHistory) ? behavior.searchHistory : [],
+            purchaseHistory: Array.isArray(behavior.purchaseHistory) ? behavior.purchaseHistory : [],
+            timeOnPage: behavior.timeOnPage || {},
+            clickPatterns: behavior.clickPatterns || {},
+            sessionCount: behavior.sessionCount || 1,
+            lastVisit: behavior.lastVisit ? new Date(behavior.lastVisit) : new Date(),
+          };
+          setUserBehavior(sanitizedBehavior);
           setIsPersonalized(true);
           console.log('🔄 Loaded user behavior:', {
-            viewedBooks: behavior.viewedBooks?.length || 0,
-            viewedGenres: behavior.viewedGenres || [],
-            sessionCount: behavior.sessionCount || 1
+            viewedBooks: sanitizedBehavior.viewedBooks.length || 0,
+            viewedGenres: sanitizedBehavior.viewedGenres || [],
+            sessionCount: sanitizedBehavior.sessionCount || 1
           });
         } catch (error) {
           console.error('Error loading behavior:', error);
+          // Reset to default behavior on error
+          setUserBehavior(defaultBehavior);
         }
       } else {
         // Initialize session for new users
@@ -493,7 +507,9 @@ export function PersonalizationProvider({ children }: { children: React.ReactNod
           
           // Track viewed genres for Lytics personalization
           if (data.genre) {
-            updated.viewedGenres = Array.from(new Set([...prev.viewedGenres, data.genre]));
+            // Ensure viewedGenres is an array before spreading
+            const existingGenres = Array.isArray(prev.viewedGenres) ? prev.viewedGenres : [];
+            updated.viewedGenres = Array.from(new Set([...existingGenres, data.genre]));
             console.log(`📖 Updated viewed genres for Lytics:`, updated.viewedGenres);
           }
           
