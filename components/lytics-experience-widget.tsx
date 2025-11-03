@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import lyticsPersonalization from '../lib/lytics-personalization-service';
 
 // Extend Window interface for Pathfora
 declare global {
   interface Window {
     pathfora?: any;
+    jstag?: any;
   }
 }
 
@@ -40,11 +42,21 @@ export default function LyticsExperienceWidget({
     setIsReady(true);
     console.log('📚 Curated recommendations ready');
     
-    // Initial refresh to load current genre preference
-    console.log('🔄 Initial genre check on mount');
-    const initialGenre = getUserPreferredGenre();
-    setCurrentGenre(initialGenre);
-    console.log(`🎯 Initial genre set to: ${initialGenre || 'none'}`);
+    // Wait for Lytics to be ready, then get initial genre
+    console.log('🔄 Waiting for Lytics to initialize...');
+    lyticsPersonalization.waitUntilReady(5000).then((ready) => {
+      if (ready) {
+        console.log('✅ Lytics ready - checking genre from audiences');
+        const initialGenre = getUserPreferredGenre();
+        setCurrentGenre(initialGenre);
+        console.log(`🎯 Initial genre set to: ${initialGenre || 'none'} (from Lytics)`);
+      } else {
+        console.log('⚠️ Lytics not ready - using localStorage fallback');
+        const initialGenre = getUserPreferredGenre();
+        setCurrentGenre(initialGenre);
+        console.log(`🎯 Initial genre set to: ${initialGenre || 'none'} (from localStorage)`);
+      }
+    });
 
     // Listen for genre book interactions to refresh recommendations
     const handleGenreBookInteraction = (event: CustomEvent) => {
@@ -52,10 +64,27 @@ export default function LyticsExperienceWidget({
       console.log(`🎯 ${genre} book interaction detected - refreshing recommendations`);
       console.log(`📖 Book: ${title} (${bookId})`);
       
-      setTimeout(() => {
-        console.log('🔄 Triggering recommendation refresh...');
-        setRefreshCounter(prev => prev + 1); // Force recalculation
-      }, 600); // Delay to allow localStorage to update
+      // Refresh Lytics data to get updated audiences
+      setTimeout(async () => {
+        console.log('🔄 Refreshing Lytics audience data...');
+        
+        try {
+          // Wait a bit for Lytics to process the event
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Refresh Lytics user data
+          await lyticsPersonalization.refresh();
+          console.log('✅ Lytics data refreshed');
+          
+          // Trigger UI update
+          console.log('🔄 Triggering recommendation refresh...');
+          setRefreshCounter(prev => prev + 1);
+        } catch (error) {
+          console.error('❌ Error refreshing Lytics:', error);
+          // Still trigger refresh with localStorage fallback
+          setRefreshCounter(prev => prev + 1);
+        }
+      }, 600);
     };
 
     // Listen for personalized recommendations refresh events
@@ -152,40 +181,57 @@ export default function LyticsExperienceWidget({
     // Add more genres and their experience IDs as needed
   };
 
-  // Get user's preferred genre based on their interactions
+  // Get user's preferred genre from Lytics audiences (with localStorage fallback)
   const getUserPreferredGenre = (): string | null => {
     try {
       if (typeof window === 'undefined') return null;
       
-      console.log('🔍 Checking user genre preferences...');
+      console.group('🔍 Getting User Genre Preference');
+      console.log('🎯 Source: Lytics Audiences');
+      
+      // PRIMARY: Try Lytics first
+      if (lyticsPersonalization.isServiceReady()) {
+        const lyticsGenre = lyticsPersonalization.getPreferredGenreFromAudiences();
+        
+        if (lyticsGenre) {
+          console.log(`✅ Lytics says: ${lyticsGenre}`);
+          const audiences = lyticsPersonalization.getUserAudiences();
+          console.log(`📊 Based on audiences:`, audiences.map(a => a.name));
+          console.groupEnd();
+          return lyticsGenre;
+        } else {
+          console.log('⚠️ Lytics has no genre preference yet');
+        }
+      } else {
+        console.log('⏳ Lytics not ready yet, checking localStorage fallback...');
+      }
+      
+      // FALLBACK: Use localStorage if Lytics doesn't have data
+      console.log('📦 Falling back to localStorage...');
       const behaviorData = localStorage.getItem('user-behavior');
       const preferencesData = localStorage.getItem('user-preferences');
       
-      console.log('📊 Raw behavior data:', behaviorData ? 'exists' : 'not found');
-      console.log('📊 Raw preferences data:', preferencesData ? 'exists' : 'not found');
+      console.log('📊 localStorage behavior:', behaviorData ? 'exists' : 'not found');
+      console.log('📊 localStorage preferences:', preferencesData ? 'exists' : 'not found');
       
       // Check viewed genres from behavior
       if (behaviorData) {
         try {
           const behavior = JSON.parse(behaviorData);
-          console.log('📖 Parsed behavior:', behavior);
-          
-          // Ensure viewedGenres is an array
           const viewedGenres = Array.isArray(behavior.viewedGenres) ? behavior.viewedGenres : [];
-          console.log('👀 Viewed genres:', viewedGenres);
-          console.log('🎯 Available experiences:', Object.keys(GENRE_EXPERIENCES));
+          console.log('👀 localStorage genres:', viewedGenres);
           
-          // Return the most recently viewed genre that we have an experience for
+          // Return the most recently viewed genre
           for (let i = viewedGenres.length - 1; i >= 0; i--) {
             const genre = viewedGenres[i];
-            console.log(`🔍 Checking genre: ${genre}, has experience: ${!!GENRE_EXPERIENCES[genre]}`);
             if (GENRE_EXPERIENCES[genre]) {
-              console.log(`✅ User recently viewed ${genre} books - using ${genre} experience`);
+              console.log(`✅ localStorage says: ${genre}`);
+              console.groupEnd();
               return genre;
             }
           }
         } catch (parseError) {
-          console.error('❌ Error parsing behavior data:', parseError);
+          console.error('❌ Error parsing localStorage:', parseError);
         }
       }
       
@@ -193,28 +239,26 @@ export default function LyticsExperienceWidget({
       if (preferencesData) {
         try {
           const preferences = JSON.parse(preferencesData);
-          console.log('⭐ Parsed preferences:', preferences);
-          
           const favoriteGenres = Array.isArray(preferences.favoriteGenres) ? preferences.favoriteGenres : [];
-          console.log('⭐ Favorite genres:', favoriteGenres);
           
-          // Return the first favorite genre that we have an experience for
           for (const genre of favoriteGenres) {
-            console.log(`🔍 Checking favorite genre: ${genre}, has experience: ${!!GENRE_EXPERIENCES[genre]}`);
             if (GENRE_EXPERIENCES[genre]) {
-              console.log(`✅ User has ${genre} in favorites - using ${genre} experience`);
+              console.log(`✅ localStorage preferences say: ${genre}`);
+              console.groupEnd();
               return genre;
             }
           }
         } catch (parseError) {
-          console.error('❌ Error parsing preferences data:', parseError);
+          console.error('❌ Error parsing preferences:', parseError);
         }
       }
       
-      console.log('❌ No matching genre found, returning null');
+      console.log('❌ No genre found in Lytics or localStorage');
+      console.groupEnd();
       return null;
     } catch (error) {
-      console.error('❌ Error getting user preferred genre:', error);
+      console.error('❌ Error getting preferred genre:', error);
+      console.groupEnd();
       return null;
     }
   };
@@ -302,6 +346,10 @@ export default function LyticsExperienceWidget({
 
   // Get display text for the current genre focus
   const getGenreDisplayInfo = () => {
+    // Check if using Lytics or localStorage
+    const isUsingLytics = lyticsPersonalization.isServiceReady() && 
+                          lyticsPersonalization.getUserAudiences().length > 0;
+    
     // Use currentGenre state
     if (currentGenre && checkUserGenreInteraction(currentGenre)) {
       const genreEmojis: Record<string, string> = {
@@ -317,14 +365,16 @@ export default function LyticsExperienceWidget({
       
       return {
         status: `${genreEmojis[currentGenre] || '📚'} ${currentGenre} Books Focus`,
-        subtitle: `${currentGenre} Books Experience Active`,
+        subtitle: isUsingLytics 
+          ? `Powered by Lytics Audiences` 
+          : `${currentGenre} Books Experience Active`,
         title: `📚 ${currentGenre} Recommendations`
       };
     }
     
     return {
-      status: '✅ Personalized',
-      subtitle: 'Powered by Lytics',
+      status: isUsingLytics ? '✅ Lytics Personalization' : '✅ Personalized',
+      subtitle: isUsingLytics ? 'Real-time Audience Tracking' : 'Powered by Lytics',
       title: '📚 Curated Recommendations'
     };
   };
