@@ -23,6 +23,8 @@ export default function LyticsExperienceWidget({
   const [isReady, setIsReady] = useState(false);
   const [experienceLoaded, setExperienceLoaded] = useState(false);
   const [currentPath, setCurrentPath] = useState('');
+  const [refreshCounter, setRefreshCounter] = useState(0); // Used to force re-renders
+  const [currentGenre, setCurrentGenre] = useState<string | null>(null);
 
   useEffect(() => {
     // Get current path
@@ -37,6 +39,12 @@ export default function LyticsExperienceWidget({
     // Simple setup - no complex Pathfora initialization needed
     setIsReady(true);
     console.log('📚 Curated recommendations ready');
+    
+    // Initial refresh to load current genre preference
+    console.log('🔄 Initial genre check on mount');
+    const initialGenre = getUserPreferredGenre();
+    setCurrentGenre(initialGenre);
+    console.log(`🎯 Initial genre set to: ${initialGenre || 'none'}`);
 
     // Listen for genre book interactions to refresh recommendations
     const handleGenreBookInteraction = (event: CustomEvent) => {
@@ -45,28 +53,56 @@ export default function LyticsExperienceWidget({
       console.log(`📖 Book: ${title} (${bookId})`);
       
       setTimeout(() => {
-        // Force re-render by updating a state or triggering component update
-        setIsReady(false);
-        setTimeout(() => setIsReady(true), 100);
-      }, 500); // Small delay to allow localStorage to update
+        console.log('🔄 Triggering recommendation refresh...');
+        setRefreshCounter(prev => prev + 1); // Force recalculation
+      }, 600); // Delay to allow localStorage to update
     };
 
     // Listen for personalized recommendations refresh events
     const handlePersonalizationRefresh = (event: CustomEvent) => {
       console.log('🔄 Personalization refresh requested:', event.detail);
       setTimeout(() => {
-        setIsReady(false);
-        setTimeout(() => setIsReady(true), 200);
+        console.log('🔄 Triggering recommendation refresh...');
+        setRefreshCounter(prev => prev + 1);
       }, 300);
     };
 
-    // Listen for storage changes (when user clicks on books)
+    // Listen for storage changes (when user clicks on books) - Note: only works across tabs
     const handleStorageChange = () => {
-      console.log('🔄 Storage changed - checking for genre preference updates');
+      console.log('🔄 Storage event detected (from another tab)');
       setTimeout(() => {
-        setIsReady(false);
-        setTimeout(() => setIsReady(true), 100);
+        console.log('🔄 Triggering recommendation refresh...');
+        setRefreshCounter(prev => prev + 1);
       }, 500);
+    };
+    
+    // Check for visibility changes to refresh recommendations when returning to tab
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('👁️ Tab became visible - checking for updates');
+        setTimeout(() => {
+          setRefreshCounter(prev => prev + 1);
+        }, 200);
+      }
+    };
+    
+    // Handle browser back/forward navigation
+    const handlePopState = () => {
+      console.log('🔙 Browser navigation detected (back/forward)');
+      if (window.location.pathname === targetPath) {
+        console.log('✅ Returned to /books - refreshing recommendations');
+        setTimeout(() => {
+          setRefreshCounter(prev => prev + 1);
+        }, 300);
+      }
+    };
+    
+    // Handle page focus (when returning from another page/tab)
+    const handleFocus = () => {
+      console.log('🎯 Window focused - checking for updates');
+      setTimeout(() => {
+        setRefreshCounter(prev => prev + 1);
+      }, 200);
     };
 
     // Add event listeners
@@ -74,14 +110,35 @@ export default function LyticsExperienceWidget({
     window.addEventListener('warBookClicked', handleGenreBookInteraction as EventListener);
     window.addEventListener('personalizedRecommendationsRefresh', handlePersonalizationRefresh as EventListener);
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       window.removeEventListener('genreBookClicked', handleGenreBookInteraction as EventListener);
       window.removeEventListener('warBookClicked', handleGenreBookInteraction as EventListener);
       window.removeEventListener('personalizedRecommendationsRefresh', handlePersonalizationRefresh as EventListener);
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [books, targetPath]);
+
+  // Monitor localStorage changes and update current genre when refreshCounter changes
+  useEffect(() => {
+    if (refreshCounter > 0) { // Skip initial mount (counter is 0)
+      console.log(`🔄 Refresh triggered (counter: ${refreshCounter})`);
+      const preferredGenre = getUserPreferredGenre();
+      
+      if (preferredGenre !== currentGenre) {
+        console.log(`🎯 Genre changed: ${currentGenre || 'none'} → ${preferredGenre || 'none'}`);
+        setCurrentGenre(preferredGenre);
+      } else {
+        console.log(`✅ Genre unchanged: ${currentGenre || 'none'}`);
+      }
+    }
+  }, [refreshCounter, currentGenre]); // Runs every time refreshCounter changes
 
   // Simplified - no complex initialization needed
   const getBooksWithImages = () => {
@@ -198,22 +255,21 @@ export default function LyticsExperienceWidget({
     console.group('📚 Getting Curated Books');
     const booksWithImages = books.filter((book: any) => book.featured_image?.url || book.bookimage?.url);
     console.log(`📖 Total books with images: ${booksWithImages.length}`);
+    console.log(`🎯 Current genre state: ${currentGenre || 'none'}`);
     
-    const preferredGenre = getUserPreferredGenre();
-    console.log(`🎯 Preferred genre: ${preferredGenre || 'none'}`);
-    
-    if (preferredGenre) {
-      const hasInteraction = checkUserGenreInteraction(preferredGenre);
-      console.log(`👆 Has ${preferredGenre} interaction: ${hasInteraction}`);
+    // Use currentGenre state instead of calling getUserPreferredGenre()
+    if (currentGenre) {
+      const hasInteraction = checkUserGenreInteraction(currentGenre);
+      console.log(`👆 Has ${currentGenre} interaction: ${hasInteraction}`);
       
       if (hasInteraction) {
-        console.log(`📚 Prioritizing ${preferredGenre} books for recommendations`);
+        console.log(`📚 Prioritizing ${currentGenre} books for recommendations`);
         
         // Prioritize books of the preferred genre
-        const preferredGenreBooks = booksWithImages.filter((book: any) => book.book_type === preferredGenre);
-        const otherBooks = booksWithImages.filter((book: any) => book.book_type !== preferredGenre);
+        const preferredGenreBooks = booksWithImages.filter((book: any) => book.book_type === currentGenre);
+        const otherBooks = booksWithImages.filter((book: any) => book.book_type !== currentGenre);
         
-        console.log(`✅ Found ${preferredGenreBooks.length} ${preferredGenre} books`);
+        console.log(`✅ Found ${preferredGenreBooks.length} ${currentGenre} books`);
         console.log(`📚 Found ${otherBooks.length} other books`);
         
         const result = [...preferredGenreBooks, ...otherBooks].slice(0, 4);
@@ -233,11 +289,10 @@ export default function LyticsExperienceWidget({
 
   // Get the current active experience ID based on user's preferred genre
   const getCurrentExperienceId = (): string => {
-    const preferredGenre = getUserPreferredGenre();
-    
-    if (preferredGenre && GENRE_EXPERIENCES[preferredGenre]) {
-      console.log(`🎯 Using ${preferredGenre} experience: ${GENRE_EXPERIENCES[preferredGenre]}`);
-      return GENRE_EXPERIENCES[preferredGenre];
+    // Use currentGenre state
+    if (currentGenre && GENRE_EXPERIENCES[currentGenre]) {
+      console.log(`🎯 Using ${currentGenre} experience: ${GENRE_EXPERIENCES[currentGenre]}`);
+      return GENRE_EXPERIENCES[currentGenre];
     }
     
     // Default to War experience if no preference
@@ -247,9 +302,8 @@ export default function LyticsExperienceWidget({
 
   // Get display text for the current genre focus
   const getGenreDisplayInfo = () => {
-    const preferredGenre = getUserPreferredGenre();
-    
-    if (preferredGenre && checkUserGenreInteraction(preferredGenre)) {
+    // Use currentGenre state
+    if (currentGenre && checkUserGenreInteraction(currentGenre)) {
       const genreEmojis: Record<string, string> = {
         'War': '⚔️',
         'Biography': '👤',
@@ -257,13 +311,14 @@ export default function LyticsExperienceWidget({
         'Fantasy': '🧙‍♂️',
         'Romance': '💕',
         'Science': '🔬',
-        'History': '📜'
+        'History': '📜',
+        'Thrillers': '🎭'
       };
       
       return {
-        status: `${genreEmojis[preferredGenre] || '📚'} ${preferredGenre} Books Focus`,
-        subtitle: `${preferredGenre} Books Experience Active`,
-        title: `📚 ${preferredGenre} Recommendations`
+        status: `${genreEmojis[currentGenre] || '📚'} ${currentGenre} Books Focus`,
+        subtitle: `${currentGenre} Books Experience Active`,
+        title: `📚 ${currentGenre} Recommendations`
       };
     }
     
