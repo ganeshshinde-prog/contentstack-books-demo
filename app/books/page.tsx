@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { onEntryChange } from '../../contentstack-sdk';
 import Skeleton from 'react-loading-skeleton';
 import BookCard from '../../components/book-card';
@@ -29,6 +29,12 @@ function BooksContent() {
   const [books, setBooks] = useState<Book[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGenreLocal, setSelectedGenreLocal] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('title-asc');
+  const [isGenreDropdownOpen, setIsGenreDropdownOpen] = useState(false);
+  const [genreSearchQuery, setGenreSearchQuery] = useState('');
+  const genreDropdownRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const selectedGenre = searchParams.get('genre');
   const { personalizeSDK } = usePersonalization();
@@ -120,29 +126,99 @@ function BooksContent() {
     onEntryChange(() => fetchData());
   }, []);
 
-  // Filter books based on selected genre
+  // Sync URL genre param with local state
+  useEffect(() => {
+    if (selectedGenre) {
+      setSelectedGenreLocal(selectedGenre);
+    } else {
+      setSelectedGenreLocal('');
+    }
+  }, [selectedGenre]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (genreDropdownRef.current && !genreDropdownRef.current.contains(event.target as Node)) {
+        setIsGenreDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Filter and sort books based on search, genre, and sort option
   useEffect(() => {
     console.log('🔍 Books state changed:', books.length, 'books');
-    console.log('🔍 Selected genre:', selectedGenre);
+    console.log('🔍 Selected genre:', selectedGenreLocal);
+    console.log('🔍 Search query:', searchQuery);
+    console.log('🔍 Sort by:', sortBy);
     
     if (books.length > 0) {
-      if (selectedGenre) {
-        const filtered = books.filter(book => 
-          book.book_type.toLowerCase() === selectedGenre.toLowerCase()
+      let filtered = [...books];
+      
+      // Filter by genre
+      if (selectedGenreLocal) {
+        filtered = filtered.filter(book => 
+          book.book_type.toLowerCase() === selectedGenreLocal.toLowerCase()
         );
-        console.log('📚 Filtered books for genre', selectedGenre + ':', filtered.length);
-        setFilteredBooks(filtered);
-      } else {
-        console.log('📚 Setting all books as filtered:', books.length);
-        setFilteredBooks(books);
       }
+      
+      // Filter by search query
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(book => 
+          book.title.toLowerCase().includes(query) ||
+          book.author.toLowerCase().includes(query) ||
+          book.book_description.toLowerCase().includes(query)
+        );
+      }
+      
+      // Sort books
+      filtered = [...filtered].sort((a, b) => {
+        switch (sortBy) {
+          case 'title-asc':
+            return a.title.localeCompare(b.title);
+          case 'title-desc':
+            return b.title.localeCompare(a.title);
+          case 'price-asc':
+            return a.price - b.price;
+          case 'price-desc':
+            return b.price - a.price;
+          case 'author-asc':
+            return a.author.localeCompare(b.author);
+          case 'author-desc':
+            return b.author.localeCompare(a.author);
+          case 'pages-asc':
+            return a.number_of_pages - b.number_of_pages;
+          case 'pages-desc':
+            return b.number_of_pages - a.number_of_pages;
+          default:
+            return 0;
+        }
+      });
+      
+      console.log('📚 Filtered and sorted:', filtered.length, 'books');
+      setFilteredBooks(filtered);
     } else {
       console.log('⚠️ No books available to filter');
     }
-  }, [books, selectedGenre]);
+  }, [books, selectedGenreLocal, searchQuery, sortBy]);
 
   // Get unique genres from all books
   const availableGenres = Array.from(new Set(books.map(book => book.book_type)));
+  
+  // Filter genres for dropdown search
+  const filteredGenres = availableGenres.filter(genre =>
+    genre.toLowerCase().includes(genreSearchQuery.toLowerCase())
+  );
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setSelectedGenreLocal('');
+    setSortBy('title-asc');
+    window.history.pushState({}, '', '/books');
+  };
 
   return (
     <div className='books-container'>
@@ -162,36 +238,191 @@ function BooksContent() {
           </p>
         </div>
 
-        {/* Filter Controls */}
-        <div className='filter-controls'>
-          <div className='filter-buttons'>
-            <Link 
-              href='/books' 
-              className={`filter-btn ${!selectedGenre ? 'active' : ''}`}
-            >
-              All Books ({books.length})
-            </Link>
-            {availableGenres.map((genre) => {
-              const genreCount = books.filter(book => book.book_type === genre).length;
-              return (
-                <Link
-                  key={genre}
-                  href={`/books?genre=${encodeURIComponent(genre)}`}
-                  className={`filter-btn ${selectedGenre === genre ? 'active' : ''}`}
-                >
-                  {genre} ({genreCount})
-                </Link>
-              );
-            })}
+        {/* Professional Search and Filter Bar */}
+        <div className='professional-filter-bar'>
+          <div className='filter-row'>
+            {/* Search Input */}
+            <div className='filter-group search-group'>
+              <div className='filter-input-wrapper'>
+                <svg className='filter-icon' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                  <circle cx='11' cy='11' r='8' />
+                  <path d='m21 21-4.35-4.35' />
+                </svg>
+                <input
+                  type='text'
+                  className='filter-input'
+                  placeholder='Search books by title, author...'
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button 
+                    className='clear-input-btn'
+                    onClick={() => setSearchQuery('')}
+                    aria-label='Clear search'
+                  >
+                    <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                      <line x1='18' y1='6' x2='6' y2='18' />
+                      <line x1='6' y1='6' x2='18' y2='18' />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Genre Dropdown */}
+            <div className='filter-group' ref={genreDropdownRef}>
+              <button
+                className={`filter-dropdown-trigger ${selectedGenreLocal ? 'has-value' : ''}`}
+                onClick={() => setIsGenreDropdownOpen(!isGenreDropdownOpen)}
+              >
+                <span className='filter-dropdown-label'>
+                  {selectedGenreLocal || 'All Genres'}
+                </span>
+                <svg className={`dropdown-arrow ${isGenreDropdownOpen ? 'open' : ''}`} width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                  <polyline points='6 9 12 15 18 9' />
+                </svg>
+              </button>
+
+              {isGenreDropdownOpen && (
+                <div className='filter-dropdown-menu'>
+                  <div className='dropdown-search-wrapper'>
+                    <svg className='dropdown-search-icon' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                      <circle cx='11' cy='11' r='8' />
+                      <path d='m21 21-4.35-4.35' />
+                    </svg>
+                    <input
+                      type='text'
+                      className='dropdown-search-input'
+                      placeholder='Search genres...'
+                      value={genreSearchQuery}
+                      onChange={(e) => setGenreSearchQuery(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  
+                  <div className='dropdown-options'>
+                    <button
+                      className={`dropdown-option ${!selectedGenreLocal ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedGenreLocal('');
+                        setIsGenreDropdownOpen(false);
+                        setGenreSearchQuery('');
+                        window.history.pushState({}, '', '/books');
+                      }}
+                    >
+                      <span className='option-text'>All Genres</span>
+                      <span className='option-count'>{books.length}</span>
+                    </button>
+                    
+                    {filteredGenres.length > 0 ? (
+                      filteredGenres.map((genre) => {
+                        const genreCount = books.filter(book => book.book_type === genre).length;
+                        return (
+                          <button
+                            key={genre}
+                            className={`dropdown-option ${selectedGenreLocal === genre ? 'selected' : ''}`}
+                            onClick={() => {
+                              setSelectedGenreLocal(genre);
+                              setIsGenreDropdownOpen(false);
+                              setGenreSearchQuery('');
+                              window.history.pushState({}, '', `/books?genre=${encodeURIComponent(genre)}`);
+                            }}
+                          >
+                            <span className='option-text'>{genre}</span>
+                            <span className='option-count'>{genreCount}</span>
+                            {selectedGenreLocal === genre && (
+                              <svg className='check-icon' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                                <polyline points='20 6 9 17 4 12' />
+                              </svg>
+                            )}
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className='dropdown-no-results'>
+                        No genres found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className='filter-group'>
+              <select
+                className='filter-select'
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value='title-asc'>Title (A-Z)</option>
+                <option value='title-desc'>Title (Z-A)</option>
+                <option value='price-asc'>Price (Low to High)</option>
+                <option value='price-desc'>Price (High to Low)</option>
+                <option value='author-asc'>Author (A-Z)</option>
+                <option value='author-desc'>Author (Z-A)</option>
+                <option value='pages-asc'>Pages (Least First)</option>
+                <option value='pages-desc'>Pages (Most First)</option>
+              </select>
+              <svg className='select-arrow' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                <polyline points='6 9 12 15 18 9' />
+              </svg>
+            </div>
+
+            {/* Clear All Button */}
+            {(searchQuery || selectedGenreLocal || sortBy !== 'title-asc') && (
+              <button className='clear-all-btn' onClick={clearAllFilters}>
+                <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                  <line x1='18' y1='6' x2='6' y2='18' />
+                  <line x1='6' y1='6' x2='18' y2='18' />
+                </svg>
+                Clear All
+              </button>
+            )}
           </div>
-          
-          {selectedGenre && (
-            <div className='active-filter'>
-              <span className='filter-label'>Showing:</span>
-              <span className='filter-value'>{selectedGenre}</span>
-              <Link href='/books' className='clear-filter'>
-                ✕ Clear Filter
-              </Link>
+
+          {/* Active Filters Display */}
+          {(searchQuery || selectedGenreLocal) && (
+            <div className='active-filters'>
+              <span className='active-filters-label'>Active filters:</span>
+              <div className='active-filter-tags'>
+                {searchQuery && (
+                  <span className='filter-tag'>
+                    <span className='filter-tag-label'>Search:</span>
+                    <span className='filter-tag-value'>{searchQuery}</span>
+                    <button 
+                      className='filter-tag-remove'
+                      onClick={() => setSearchQuery('')}
+                      aria-label='Remove search filter'
+                    >
+                      <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                        <line x1='18' y1='6' x2='6' y2='18' />
+                        <line x1='6' y1='6' x2='18' y2='18' />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+                {selectedGenreLocal && (
+                  <span className='filter-tag'>
+                    <span className='filter-tag-label'>Genre:</span>
+                    <span className='filter-tag-value'>{selectedGenreLocal}</span>
+                    <button 
+                      className='filter-tag-remove'
+                      onClick={() => {
+                        setSelectedGenreLocal('');
+                        window.history.pushState({}, '', '/books');
+                      }}
+                      aria-label='Remove genre filter'
+                    >
+                      <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                        <line x1='18' y1='6' x2='6' y2='18' />
+                        <line x1='6' y1='6' x2='18' y2='18' />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>
