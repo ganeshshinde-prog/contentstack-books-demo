@@ -119,7 +119,7 @@ function OrderConfirmationContent() {
                 {order.items.map((item) => (
                   <div key={item.id} className="order-item">
                     <img 
-                      src={item.image || '/placeholder-book.jpg'} 
+                      src={item.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA0MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNSAyMEgyNVYyMkgxNVYyMFpNMTUgMjRIMjNWMjZIMTVWMjRaTTE1IDI4SDI1VjMwSDE1VjI4WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K'} 
                       alt={item.title}
                       className="item-image"
                     />

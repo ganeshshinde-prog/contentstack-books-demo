@@ -4,8 +4,6 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { onEntryChange } from '../../contentstack-sdk';
 import { getNewArrivalsRes } from '../../helper';
 import Skeleton from 'react-loading-skeleton';
-import BookCard from '../../components/book-card';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Book {
@@ -26,21 +24,14 @@ interface Book {
 
 function NewArrivalsContent() {
   const [books, setBooks] = useState<Book[]>([]);
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  const searchParams = useSearchParams();
-  const selectedGenre = searchParams.get('genre');
+  const [showAll, setShowAll] = useState(false);
 
   async function fetchData() {
     try {
       console.log('🔍 NEW_ARRIVALS PAGE: Starting fetch from NewBookInfo content type...');
       const booksRes = await getNewArrivalsRes();
       console.log('📚 NEW_ARRIVALS PAGE: Received books:', booksRes.length, 'books from NewBookInfo');
-      console.log('📦 NEW_ARRIVALS PAGE: Sample book data:', booksRes[0] ? {
-        uid: booksRes[0].uid,
-        title: booksRes[0].title,
-        contentType: 'NewBookInfo'
-      } : 'No books received');
       
       setBooks(booksRes);
       setLoading(false);
@@ -50,166 +41,264 @@ function NewArrivalsContent() {
     }
   }
 
-  // Filter books based on selected genre
-  useEffect(() => {
-    if (books.length > 0) {
-      if (selectedGenre) {
-        const filtered = books.filter(book => 
-          book.book_type.toLowerCase() === selectedGenre.toLowerCase()
-        );
-        setFilteredBooks(filtered);
-      } else {
-        setFilteredBooks(books);
-      }
-    }
-  }, [books, selectedGenre]);
-
   useEffect(() => {
     fetchData();
     onEntryChange(() => fetchData());
   }, []);
 
-  // Get unique genres from all books
-  const availableGenres = Array.from(new Set(books.map(book => book.book_type)));
+  const displayedBooks = showAll ? books : books.slice(0, 3);
 
   return (
-    <div className='new-arrivals-container'>
-      <div className='max-width'>
-        <div className='new-arrivals-header'>
-          <div className='header-content'>
-            <div className='header-badge'>
-              <span className='badge-icon'>✨</span>
-              <span className='badge-text'>Fresh & New</span>
-            </div>
-            <h1>
-              {selectedGenre 
-                ? `New ${selectedGenre} Arrivals` 
-                : 'New Arrivals'
-              }
+    <div style={{
+      background: 'linear-gradient(135deg, #f5f0e8 0%, #e8dfd0 100%)',
+      minHeight: '100vh',
+      padding: '80px 0'
+    }}>
+      <div className='max-width' style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 40px' }}>
+        {/* Header Section */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '60px'
+        }}>
+          <div>
+            <h1 style={{
+              fontSize: 'clamp(42px, 5vw, 64px)',
+              fontWeight: '700',
+              color: '#2d3748',
+              marginBottom: '16px',
+              fontFamily: 'Georgia, serif',
+              letterSpacing: '-0.5px'
+            }}>
+              Fresh Off The Press
             </h1>
-            <p>
-              {selectedGenre 
-                ? `Discover the latest ${selectedGenre.toLowerCase()} books added to our collection` 
-                : 'Discover the latest books added to our collection - fresh stories, new adventures, and exciting reads await!'
-              }
+            <p style={{
+              fontSize: 'clamp(16px, 2vw, 20px)',
+              color: '#5a5a5a',
+              maxWidth: '600px',
+              lineHeight: '1.6'
+            }}>
+              Check out the latest additions to our growing library.
             </p>
           </div>
-          <div className='header-stats'>
-            <div className='stat-item'>
-              <span className='stat-number'>{books.length}</span>
-              <span className='stat-label'>New Books</span>
-            </div>
-            <div className='stat-item'>
-              <span className='stat-number'>{availableGenres.length}</span>
-              <span className='stat-label'>Genres</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Controls */}
-        <div className='filter-controls'>
-          <div className='filter-buttons'>
-            <Link 
-              href='/new_arrivals' 
-              className={`filter-btn ${!selectedGenre ? 'active' : ''}`}
-            >
-              All New Arrivals ({books.length})
-            </Link>
-            {availableGenres.map((genre) => {
-              const genreCount = books.filter(book => book.book_type === genre).length;
-              return (
-                <Link
-                  key={genre}
-                  href={`/new_arrivals?genre=${encodeURIComponent(genre)}`}
-                  className={`filter-btn ${selectedGenre === genre ? 'active' : ''}`}
-                >
-                  {genre} ({genreCount})
-                </Link>
-              );
-            })}
-          </div>
           
-          {selectedGenre && (
-            <div className='active-filter'>
-              <span className='filter-label'>Showing:</span>
-              <span className='filter-value'>New {selectedGenre} Books</span>
-              <Link href='/new_arrivals' className='clear-filter'>
-                ✕ Clear Filter
-              </Link>
-            </div>
+          {!showAll && books.length > 3 && (
+            <button
+              onClick={() => setShowAll(true)}
+              style={{
+                padding: '14px 32px',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#A0522D',
+                background: 'transparent',
+                border: '2px solid #A0522D',
+                borderRadius: '50px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#A0522D';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = '#A0522D';
+              }}
+            >
+              View All
+            </button>
           )}
         </div>
 
-        {/* Results */}
-        <div className='new-arrivals-results'>
-          {loading ? (
-            <div className='books-grid'>
-              {[...Array(6)].map((_, index) => (
-                <div key={index} className='book-skeleton'>
-                  <Skeleton height={400} />
-                </div>
-              ))}
-            </div>
-          ) : filteredBooks.length > 0 ? (
-            <>
-              <div className='results-count'>
-                {selectedGenre 
-                  ? `${filteredBooks.length} new ${selectedGenre.toLowerCase()} ${filteredBooks.length === 1 ? 'book' : 'books'} available`
-                  : `${filteredBooks.length} new ${filteredBooks.length === 1 ? 'arrival' : 'arrivals'} in our collection`
-                }
+        {/* Books Grid */}
+        {loading ? (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+            gap: '32px'
+          }}>
+            {[...Array(3)].map((_, index) => (
+              <div key={index} style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '32px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+              }}>
+                <Skeleton height={200} />
               </div>
-              <div className='books-grid'>
-                {filteredBooks.map((book) => (
-                  <div key={book.uid} className='new-arrival-book'>
-                    <div className='new-badge'>NEW</div>
-                    <BookCard book={book} isNewArrival={true} />
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : selectedGenre ? (
-            <div className='no-books'>
-              <div className='no-books-icon'>📚</div>
-              <h3>No New {selectedGenre} Books</h3>
-              <p>We don&apos;t have any new {selectedGenre.toLowerCase()} books at the moment.</p>
-              <div className='no-books-actions'>
-                <Link href='/new_arrivals' className='btn secondary-btn'>
-                  View All New Arrivals
-                </Link>
-                <Link href='/books' className='btn primary-btn'>
-                  Browse All Books
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className='no-books'>
-              <div className='no-books-icon'>✨</div>
-              <h3>No New Arrivals Yet</h3>
-              <p>Check back soon for the latest additions to our collection!</p>
-              <div className='no-books-actions'>
-                <Link href='/books' className='btn primary-btn'>
-                  Browse All Books
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Call to Action */}
-        <div className='new-arrivals-cta'>
-          <div className='cta-content'>
-            <h3>Stay Updated</h3>
-            <p>Be the first to know when new books arrive in our collection</p>
-            <div className='cta-buttons'>
-              <Link href='/contact-us' className='btn primary-btn'>
-                Get Notifications
-              </Link>
-              <Link href='/books' className='btn secondary-btn'>
-                Browse All Books
-              </Link>
-            </div>
+            ))}
           </div>
-        </div>
+        ) : displayedBooks.length > 0 ? (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+            gap: '32px'
+          }}>
+            {displayedBooks.map((book) => (
+              <Link
+                key={book.uid}
+                href={`/newbook/${book.uid}`}
+                style={{
+                  background: 'white',
+                  borderRadius: '16px',
+                  padding: '32px',
+                  display: 'flex',
+                  gap: '24px',
+                  textDecoration: 'none',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
+                }}
+              >
+                {/* Book Cover */}
+                <div style={{
+                  flexShrink: 0,
+                  width: '140px',
+                  height: '200px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}>
+                  <img
+                    src={book.bookimage?.url || '/placeholder-book.jpg'}
+                    alt={book.title}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </div>
+
+                {/* Book Info */}
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
+                }}>
+                  <h3 style={{
+                    fontSize: '24px',
+                    fontWeight: '700',
+                    color: '#2d3748',
+                    marginBottom: '8px',
+                    fontFamily: 'Georgia, serif',
+                    lineHeight: '1.3'
+                  }}>
+                    {book.title}
+                  </h3>
+                  
+                  <p style={{
+                    fontSize: '16px',
+                    color: '#5a5a5a',
+                    marginBottom: '12px'
+                  }}>
+                    {book.author}
+                  </p>
+                  
+                  <p style={{
+                    fontSize: '15px',
+                    color: '#718096',
+                    lineHeight: '1.6',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
+                  }}>
+                    {book.book_description || 'A captivating new addition to our collection that will transport you to new worlds and adventures.'}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div style={{
+            textAlign: 'center',
+            padding: '80px 20px',
+            background: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+          }}>
+            <div style={{ fontSize: '64px', marginBottom: '24px' }}>✨</div>
+            <h3 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#2d3748',
+              marginBottom: '12px'
+            }}>
+              No New Arrivals Yet
+            </h3>
+            <p style={{
+              fontSize: '16px',
+              color: '#718096',
+              marginBottom: '32px'
+            }}>
+              Check back soon for the latest additions to our collection!
+            </p>
+            <Link
+              href='/books'
+              style={{
+                display: 'inline-block',
+                padding: '14px 32px',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: 'white',
+                background: '#A0522D',
+                border: 'none',
+                borderRadius: '50px',
+                textDecoration: 'none',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 6px 20px rgba(160, 82, 45, 0.3)'
+              }}
+            >
+              Browse All Books
+            </Link>
+          </div>
+        )}
+
+        {/* Show Less Button */}
+        {showAll && books.length > 3 && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: '48px'
+          }}>
+            <button
+              onClick={() => setShowAll(false)}
+              style={{
+                padding: '14px 32px',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#A0522D',
+                background: 'transparent',
+                border: '2px solid #A0522D',
+                borderRadius: '50px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#A0522D';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = '#A0522D';
+              }}
+            >
+              Show Less
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -218,20 +307,44 @@ function NewArrivalsContent() {
 export default function NewArrivals() {
   return (
     <Suspense fallback={
-      <div className='new-arrivals-container'>
-        <div className='max-width'>
-          <div className='new-arrivals-header'>
-            <h1>New Arrivals</h1>
-            <p>Loading new books...</p>
+      <div style={{
+        background: 'linear-gradient(135deg, #f5f0e8 0%, #e8dfd0 100%)',
+        minHeight: '100vh',
+        padding: '80px 0'
+      }}>
+        <div className='max-width' style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 40px' }}>
+          <div style={{ marginBottom: '60px' }}>
+            <h1 style={{
+              fontSize: 'clamp(42px, 5vw, 64px)',
+              fontWeight: '700',
+              color: '#2d3748',
+              marginBottom: '16px',
+              fontFamily: 'Georgia, serif'
+            }}>
+              Fresh Off The Press
+            </h1>
+            <p style={{
+              fontSize: '20px',
+              color: '#5a5a5a'
+            }}>
+              Loading the latest additions to our library...
+            </p>
           </div>
-          <div className='new-arrivals-results'>
-            <div className='books-grid'>
-              {[...Array(6)].map((_, index) => (
-                <div key={index} className='book-skeleton'>
-                  <Skeleton height={400} />
-                </div>
-              ))}
-            </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+            gap: '32px'
+          }}>
+            {[...Array(3)].map((_, index) => (
+              <div key={index} style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '32px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+              }}>
+                <Skeleton height={200} />
+              </div>
+            ))}
           </div>
         </div>
       </div>

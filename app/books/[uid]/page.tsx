@@ -229,102 +229,227 @@ export default function BookDetailPage() {
   }
 
   return (
-    <div className="book-detail-page">
-      <div className="max-width">
-        {/* Breadcrumb */}
-        <div className="breadcrumb">
-          <Link href="/" className="breadcrumb-link">Home</Link>
-          <span className="breadcrumb-separator">›</span>
-          <Link href="/books" className="breadcrumb-link">Books</Link>
-          <span className="breadcrumb-separator">›</span>
-          <span className="breadcrumb-current">{book.title}</span>
-        </div>
-
-        {/* Book Detail Content */}
-        <div className="book-detail-content">
-          {/* Book Image and Basic Info */}
-          <div className="book-detail-main">
-            <div className="book-image-section">
-              <div className="book-image-container">
+    <div style={{
+      background: 'linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)',
+      minHeight: '100vh',
+      padding: '40px 0'
+    }}>
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .book-detail-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+      
+      <div className='max-width' style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 40px' }}>
+        
+        {/* Book Detail Card */}
+        <div style={{
+          background: 'white',
+          borderRadius: '24px',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden'
+        }}>
+          {/* Main Content */}
+          <div className="book-detail-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: '400px 1fr',
+            gap: '0'
+          }}>
+            {/* Left: Book Cover */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
+              padding: '48px 32px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative'
+            }}>
+              {book.book_type && (
+                <div style={{
+                  position: 'absolute',
+                  top: '24px',
+                  right: '24px',
+                  background: '#6B46C1',
+                  color: 'white',
+                  padding: '6px 16px',
+                  borderRadius: '20px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  {book.book_type}
+                </div>
+              )}
+              
+              <div style={{
+                width: '100%',
+                maxWidth: '300px',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+                marginBottom: '24px'
+              }}>
                 {book.bookimage?.url ? (
                   <Image
                     src={book.bookimage.url}
                     alt={book.bookimage.title || book.title}
-                    width={400}
-                    height={600}
-                    className="book-detail-image"
+                    width={300}
+                    height={450}
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      display: 'block'
+                    }}
                     priority
                   />
                 ) : (
-                  <div className="book-image-placeholder large">
+                  <div style={{
+                    width: '100%',
+                    paddingTop: '150%',
+                    background: '#cbd5e0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '48px'
+                  }}>
                     📖
-                  </div>
-                )}
-                {book.book_type && (
-                  <div className="book-type-badge large">
-                    {book.book_type}
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="book-info-section">
-              <div className="book-header">
-                <h1 className="book-title" {...book.$?.title}>
-                  {book.title}
-                </h1>
-                <p className="book-author" {...book.$?.author}>
-                  by <strong>{book.author || 'Unknown Author'}</strong>
-                </p>
-                
-                {/* Rating and Reviews */}
-                {book.rating && (
-                  <div className="book-rating">
-                    <div className="stars">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`star ${i < Math.floor(book.rating!) ? 'filled' : ''}`}>
-                          ⭐
-                        </span>
-                      ))}
-                    </div>
-                    <span className="rating-text">
-                      {book.rating}/5 ({book.reviews_count || 0} reviews)
-                    </span>
-                  </div>
-                )}
-              </div>
+            {/* Right: Book Information */}
+            <div style={{
+              padding: '48px'
+            }}>
+              {/* Title & Author */}
+              <h1 style={{
+                fontSize: 'clamp(28px, 4vw, 42px)',
+                fontWeight: '700',
+                color: '#2d3748',
+                marginBottom: '12px',
+                lineHeight: '1.2'
+              }}>
+                {book.title}
+              </h1>
+              
+              <p style={{
+                fontSize: '18px',
+                color: '#718096',
+                marginBottom: '32px',
+                fontStyle: 'italic'
+              }}>
+                by <span style={{ color: '#4a5568', fontWeight: '600' }}>{book.author || 'Unknown Author'}</span>
+              </p>
 
-              {/* Book Details */}
-              <div className="book-details-grid">
-                <div className="detail-item">
-                  <span className="detail-label">Price:</span>
-                  <span className="detail-value price-large">₹{book.price || 'N/A'}</span>
+              {/* Book Details Grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '24px',
+                marginBottom: '32px',
+                padding: '24px',
+                background: '#f8f9fa',
+                borderRadius: '12px'
+              }}>
+                <div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#718096',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '4px',
+                    fontWeight: '600'
+                  }}>PRICE:</div>
+                  <div style={{
+                    fontSize: '24px',
+                    fontWeight: '700',
+                    color: '#6B46C1'
+                  }}>₹{book.price || 'N/A'}</div>
                 </div>
-                <div className="detail-item">
-                  <span className="detail-label">Pages:</span>
-                  <span className="detail-value">{book.number_of_pages || 'N/A'}</span>
+
+                <div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#718096',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '4px',
+                    fontWeight: '600'
+                  }}>PAGES:</div>
+                  <div style={{
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    color: '#2d3748'
+                  }}>{book.number_of_pages || 'Unknown'}</div>
                 </div>
+
                 {book.publication_year && (
-                  <div className="detail-item">
-                    <span className="detail-label">Published:</span>
-                    <span className="detail-value">{book.publication_year}</span>
+                  <div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#718096',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '4px',
+                      fontWeight: '600'
+                    }}>PUBLISHED:</div>
+                    <div style={{
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#2d3748'
+                    }}>{book.publication_year}</div>
                   </div>
                 )}
+
                 {book.isbn && (
-                  <div className="detail-item">
-                    <span className="detail-label">ISBN:</span>
-                    <span className="detail-value">{book.isbn}</span>
+                  <div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#718096',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '4px',
+                      fontWeight: '600'
+                    }}>ISBN:</div>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#4a5568'
+                    }}>{book.isbn === 'Not available' ? book.isbn : book.isbn}</div>
                   </div>
                 )}
               </div>
 
               {/* Tags */}
               {book.tags && book.tags.length > 0 && (
-                <div className="book-tags-section">
-                  <h3>Tags:</h3>
-                  <div className="book-tags">
+                <div style={{ marginBottom: '32px' }}>
+                  <h3 style={{
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: '#4a5568',
+                    marginBottom: '12px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>Tags:</h3>
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                  }}>
                     {book.tags.map((tag, index) => (
-                      <span key={index} className="book-tag large">
+                      <span key={index} style={{
+                        padding: '6px 14px',
+                        background: 'linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%)',
+                        color: '#00695c',
+                        borderRadius: '20px',
+                        fontSize: '13px',
+                        fontWeight: '600'
+                      }}>
                         {tag}
                       </span>
                     ))}
@@ -332,48 +457,80 @@ export default function BookDetailPage() {
                 </div>
               )}
 
-              {/* Key Features */}
-              {book.key_features && book.key_features.length > 0 && (
-                <div className="key-features-section">
-                  <h3>Key Features:</h3>
-                  <ul className="key-features-list">
-                    {book.key_features.map((feature, index) => (
-                      <li key={index} className="key-feature">
-                        ✓ {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               {/* Action Buttons */}
-              <div className="book-actions-section">
+              <div style={{
+                display: 'flex',
+                gap: '16px',
+                flexWrap: 'wrap'
+              }}>
                 <button 
-                  className={`add-to-cart-btn large ${isAddingToCart ? 'adding' : ''}`}
                   onClick={handleAddToCart}
                   disabled={isAddingToCart || !book.price}
+                  style={{
+                    flex: '1',
+                    minWidth: '200px',
+                    padding: '18px 32px',
+                    background: isAddingToCart ? '#9F7AEA' : '#6B46C1',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: isAddingToCart || !book.price ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 8px 24px rgba(107, 70, 193, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    opacity: isAddingToCart || !book.price ? 0.7 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isAddingToCart && book.price) {
+                      e.currentTarget.style.background = '#553C9A';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 12px 32px rgba(107, 70, 193, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#6B46C1';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(107, 70, 193, 0.3)';
+                  }}
                 >
                   {isAddingToCart ? (
                     <>
                       <span className="loading-spinner-small"></span>
-                      Adding to Cart...
-                    </>
-                  ) : !book.price ? (
-                    <>
-                      <span className="cart-icon-small">❌</span>
-                      Price Unavailable
+                      Adding...
                     </>
                   ) : (
                     <>
-                      <span className="cart-icon-small">🛒</span>
-                      Add to Cart - ₹{book.price}
+                      🛒 Add to Cart - ₹{book.price}
                     </>
                   )}
                 </button>
                 
                 <button 
-                  onClick={() => router.back()} 
-                  className="btn secondary-btn large"
+                  onClick={() => router.back()}
+                  style={{
+                    padding: '18px 32px',
+                    background: '#f7fafc',
+                    color: '#2d3748',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '50px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e2e8f0';
+                    e.currentTarget.style.borderColor = '#cbd5e0';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f7fafc';
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                  }}
                 >
                   ← Back to Books
                 </button>
@@ -381,65 +538,30 @@ export default function BookDetailPage() {
             </div>
           </div>
 
-          {/* Extended Content */}
-          <div className="book-extended-content">
-            {/* Show book summary if available (from BookInfoExtended) */}
-            {book.book_summary && (
-              <div className="content-section">
-                <h2>Book Summary</h2>
-                <div className="book-summary-extended" {...book.$?.book_summary}>
-                  {parse(book.book_summary)}
-                </div>
-              </div>
-            )}
-
-            {/* If no extended summary but has regular description, show it */}
-            {!book.book_summary && book.book_description && (
-              <div className="content-section">
-                <h2>About This Book</h2>
-                <div className="book-description-extended" {...book.$?.book_description}>
-                  {parse(book.book_description)}
-                </div>
-              </div>
-            )}
-
-            {/* If neither summary nor description available */}
-            {!book.book_summary && !book.book_description && (
-              <div className="content-section">
-                <h2>About This Book</h2>
-                <div className="book-description-extended">
-                  <p>Detailed information about "{book.title}" is not available at the moment.</p>
-                  <p>This book is available for purchase. Please check back later for more details.</p>
-                </div>
-              </div>
-            )}
-
-            {/* Additional info section for regular books */}
-            <div className="content-section">
-              <h2>Book Information</h2>
-              <div className="book-info-grid">
-                <div className="info-item">
-                  <strong>Title:</strong> {book.title}
-                </div>
-                <div className="info-item">
-                  <strong>Author:</strong> {book.author || 'Unknown Author'}
-                </div>
-                <div className="info-item">
-                  <strong>Genre:</strong> {book.book_type || 'Not specified'}
-                </div>
-                {book.price && book.price > 0 && (
-                  <div className="info-item">
-                    <strong>Price:</strong> ₹{book.price}
-                  </div>
-                )}
-                {book.number_of_pages && book.number_of_pages > 0 && (
-                  <div className="info-item">
-                    <strong>Pages:</strong> {book.number_of_pages}
-                  </div>
-                )}
+          {/* Book Summary Section */}
+          {(book.book_summary || book.book_description) && (
+            <div style={{
+              padding: '48px',
+              borderTop: '1px solid #e2e8f0'
+            }}>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: '700',
+                color: '#2d3748',
+                marginBottom: '20px',
+                borderBottom: '3px solid #6B46C1',
+                display: 'inline-block',
+                paddingBottom: '8px'
+              }}>Book Summary</h2>
+              <div style={{
+                fontSize: '16px',
+                lineHeight: '1.8',
+                color: '#4a5568'
+              }}>
+                {book.book_summary ? parse(book.book_summary) : parse(book.book_description!)}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

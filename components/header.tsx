@@ -106,6 +106,35 @@ export default function Header() {
       }
     }
     
+    // Reorder "Contact Us" to appear after "Request New Book"
+    if (newHeader.navigation_menu) {
+      const contactUsIndex = newHeader.navigation_menu.findIndex(
+        (navLink: NavLinks) => navLink.label === 'Contact Us'
+      );
+      
+      const requestBookIndex = newHeader.navigation_menu.findIndex(
+        (navLink: NavLinks) => navLink.label === 'Request New Book'
+      );
+      
+      if (contactUsIndex !== -1 && requestBookIndex !== -1 && contactUsIndex < requestBookIndex) {
+        // Remove "Contact Us" from its current position
+        const contactUsItem = newHeader.navigation_menu.splice(contactUsIndex, 1)[0];
+        
+        // Find new position of "Request New Book" (index might have changed after removal)
+        const newRequestBookIndex = newHeader.navigation_menu.findIndex(
+          (navLink: NavLinks) => navLink.label === 'Request New Book'
+        );
+        
+        // Insert "Contact Us" right after "Request New Book"
+        if (newRequestBookIndex !== -1) {
+          newHeader.navigation_menu.splice(newRequestBookIndex + 1, 0, contactUsItem);
+        } else {
+          // If "Request New Book" not found, add at the end
+          newHeader.navigation_menu.push(contactUsItem);
+        }
+      }
+    }
+    
     return newHeader
   }
 
@@ -165,8 +194,9 @@ export default function Header() {
       <div className='max-width header-div'>
         <div className='wrapper-logo'>
           <Link legacyBehavior href='/'>
-            <a className='logo-tag' title='BookHaven'>
-              <span className='site-name'>BookHaven</span>
+            <a className='logo-tag' title='Bookish' style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '28px', color: '#A0522D' }}>📖</span>
+              <span className='site-name'>Bookish</span>
             </a>
           </Link>
         </div>
@@ -241,9 +271,30 @@ export default function Header() {
               <button 
                 className='sign-in-btn'
                 onClick={() => setShowAuthModal(true)}
+                style={{
+                  background: '#A0522D',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 32px',
+                  borderRadius: '50px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(160, 82, 45, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#8B4513';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(160, 82, 45, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#A0522D';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(160, 82, 45, 0.3)';
+                }}
               >
-                <span className='user-icon'>👤</span>
-                <span className='sign-in-text'>SIGN IN</span>
+                Login
               </button>
             )}
             

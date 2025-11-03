@@ -108,7 +108,7 @@ export default function ContactUs() {
                   <div className='info-icon'>📧</div>
                   <div className='info-content'>
                     <h4>Email Us</h4>
-                    <p>books@yoursite.com</p>
+                    <p>books@bookhaven.com</p>
                   </div>
                 </div>
                 

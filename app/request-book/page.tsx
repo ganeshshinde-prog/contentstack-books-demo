@@ -83,31 +83,124 @@ export default function RequestBookPage() {
   };
 
   return (
-    <div className='request-book-page'>
+    <div className='request-book-page' style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', minHeight: '100vh', paddingTop: '40px' }}>
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes bounce {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+        
+        .hero-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 60px;
+          align-items: center;
+          margin-bottom: 60px;
+          padding: 40px 20px;
+        }
+        
+        @media (max-width: 768px) {
+          .hero-grid {
+            grid-template-columns: 1fr;
+            gap: 40px;
+          }
+        }
+      `}</style>
+      
       <div className='max-width'>
-        {/* Page Header */}
-        <div className='request-page-header'>
-          <div className='breadcrumb'>
-            <Link href='/' className='breadcrumb-link'>Home</Link>
-            <span className='breadcrumb-separator'>›</span>
-            <span className='breadcrumb-current'>Request New Book</span>
-          </div>
-          
-          <div className='page-hero'>
-            <div className='hero-icon'>📚</div>
-            <h1>Request a New Book</h1>
-            <p className='hero-description'>
+        {/* Hero Section with Illustration */}
+        <div className='hero-grid'>
+          {/* Left Side - Text Content */}
+          <div>
+            <div className='breadcrumb' style={{ marginBottom: '30px' }}>
+              <Link href='/' className='breadcrumb-link'>Home</Link>
+              <span className='breadcrumb-separator'>›</span>
+              <span className='breadcrumb-current'>Request New Book</span>
+            </div>
+            
+            <h1 style={{
+              fontSize: 'clamp(36px, 5vw, 56px)',
+              fontWeight: '800',
+              color: '#2d3748',
+              marginBottom: '24px',
+              lineHeight: '1.2'
+            }}>
+              Request a New Book
+            </h1>
+            <p style={{
+              fontSize: 'clamp(16px, 2vw, 20px)',
+              color: '#4a5568',
+              lineHeight: '1.7',
+              marginBottom: '32px'
+            }}>
               Can&apos;t find the book you&apos;re looking for in our collection? Submit a request and we&apos;ll do our best to add it for you and other readers.
             </p>
+
+            {/* Quick Stats */}
+            <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: '#A0522D' }}>24-48h</div>
+                <div style={{ fontSize: '14px', color: '#718096' }}>Review Time</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: '#A0522D' }}>1000+</div>
+                <div style={{ fontSize: '14px', color: '#718096' }}>Books Added</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: '#A0522D' }}>95%</div>
+                <div style={{ fontSize: '14px', color: '#718096' }}>Success Rate</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side - Illustration */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            <img 
+              src='/request_book.png' 
+              alt='Request a book' 
+              style={{
+                maxWidth: '100%',
+                height: 'auto',
+                borderRadius: '20px',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+                animation: 'float 3s ease-in-out infinite'
+              }}
+            />
           </div>
         </div>
 
         {!submitted ? (
-          <div className='request-form-section'>
-            <div className='form-container'>
-              <div className='form-intro'>
-                <h2>Tell us about the book</h2>
-                <p>Please provide as much information as possible to help us find the exact book you&apos;re looking for.</p>
+          <div className='request-form-section' style={{ marginBottom: '80px' }}>
+            <div className='form-container' style={{
+              background: 'white',
+              borderRadius: '24px',
+              padding: '48px',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.1)',
+              maxWidth: '900px',
+              margin: '0 auto'
+            }}>
+              <div className='form-intro' style={{ textAlign: 'center', marginBottom: '48px' }}>
+                <h2 style={{
+                  fontSize: '32px',
+                  fontWeight: '700',
+                  color: '#2d3748',
+                  marginBottom: '12px'
+                }}>Tell us about the book</h2>
+                <p style={{
+                  fontSize: '16px',
+                  color: '#718096',
+                  maxWidth: '600px',
+                  margin: '0 auto'
+                }}>Please provide as much information as possible to help us find the exact book you&apos;re looking for.</p>
               </div>
 
               <form onSubmit={handleSubmit} className='request-form'>
@@ -209,11 +302,29 @@ export default function RequestBookPage() {
                   ></textarea>
                 </div>
 
-                <div className='form-actions'>
+                <div className='form-actions' style={{
+                  display: 'flex',
+                  gap: '16px',
+                  marginTop: '32px',
+                  justifyContent: 'center'
+                }}>
                   <button 
                     type='submit' 
                     className='btn primary-btn submit-btn' 
                     disabled={loading}
+                    style={{
+                      background: '#A0522D',
+                      color: 'white',
+                      padding: '16px 48px',
+                      fontSize: '18px',
+                      fontWeight: '600',
+                      border: 'none',
+                      borderRadius: '50px',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 8px 24px rgba(160, 82, 45, 0.3)',
+                      opacity: loading ? 0.7 : 1
+                    }}
                   >
                     {loading ? (
                       <>
@@ -224,55 +335,85 @@ export default function RequestBookPage() {
                       '📚 Submit Book Request'
                     )}
                   </button>
-                  <Link href='/' className='btn secondary-btn'>
-                    Back to Home
-                  </Link>
                 </div>
               </form>
-            </div>
 
-            {/* Sidebar with information */}
-            <div className='request-info-sidebar'>
-              <div className='info-card'>
-                <h3>📋 What happens next?</h3>
-                <ul className='info-list'>
-                  <li>We review your request within 2-3 business days</li>
-                  <li>If approved, we&apos;ll add the book to our collection</li>
-                  <li>You&apos;ll receive an email notification when it&apos;s available</li>
-                  <li>The book will appear in our catalog for all readers</li>
-                </ul>
-              </div>
-
-              <div className='info-card'>
-                <h3>💡 Tips for better results</h3>
-                <ul className='info-list'>
-                  <li>Provide the complete and accurate book title</li>
-                  <li>Include the author&apos;s full name if known</li>
-                  <li>Add ISBN for faster and more accurate identification</li>
-                  <li>Mention specific edition if it matters to you</li>
-                </ul>
-              </div>
-
-              <div className='info-card'>
-                <h3>🔍 Already in our collection?</h3>
-                <p>Check if the book you&apos;re looking for is already available:</p>
-                <div className='quick-actions'>
-                  <Link href='/books' className='btn secondary-btn small'>
-                    Browse All Books
-                  </Link>
-                  <Link href='/new_arrivals' className='btn secondary-btn small'>
-                    New Arrivals
-                  </Link>
+              {/* Info Section Below Form */}
+              <div style={{
+                marginTop: '48px',
+                padding: '32px',
+                background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)',
+                borderRadius: '16px'
+              }}>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  color: '#2d3748',
+                  marginBottom: '20px',
+                  textAlign: 'center'
+                }}>📋 What happens next?</h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '24px',
+                  marginTop: '24px'
+                }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '36px', marginBottom: '12px' }}>🔍</div>
+                    <div style={{ fontSize: '14px', color: '#4a5568', fontWeight: '600' }}>We Review</div>
+                    <div style={{ fontSize: '12px', color: '#718096', marginTop: '4px' }}>Within 24-48 hours</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '36px', marginBottom: '12px' }}>✅</div>
+                    <div style={{ fontSize: '14px', color: '#4a5568', fontWeight: '600' }}>We Add It</div>
+                    <div style={{ fontSize: '12px', color: '#718096', marginTop: '4px' }}>To our collection</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '36px', marginBottom: '12px' }}>📧</div>
+                    <div style={{ fontSize: '14px', color: '#4a5568', fontWeight: '600' }}>You Get Notified</div>
+                    <div style={{ fontSize: '12px', color: '#718096', marginTop: '4px' }}>Via email</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '36px', marginBottom: '12px' }}>📚</div>
+                    <div style={{ fontSize: '14px', color: '#4a5568', fontWeight: '600' }}>Available</div>
+                    <div style={{ fontSize: '12px', color: '#718096', marginTop: '4px' }}>For all readers</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className='success-section'>
-            <div className='success-content'>
-              <div className='success-icon'>✅</div>
-              <h2>Request Submitted Successfully!</h2>
-              <p>Thank you for your book request! We&apos;ve received your submission and will review it shortly.</p>
+          <div className='success-section' style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '60vh',
+            padding: '40px 20px'
+          }}>
+            <div className='success-content' style={{
+              background: 'white',
+              borderRadius: '24px',
+              padding: '60px 48px',
+              maxWidth: '700px',
+              textAlign: 'center',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.1)'
+            }}>
+              <div className='success-icon' style={{
+                fontSize: '72px',
+                marginBottom: '24px',
+                animation: 'bounce 1s ease'
+              }}>✅</div>
+              <h2 style={{
+                fontSize: '36px',
+                fontWeight: '700',
+                color: '#2d3748',
+                marginBottom: '16px'
+              }}>Request Submitted Successfully!</h2>
+              <p style={{
+                fontSize: '18px',
+                color: '#718096',
+                marginBottom: '32px'
+              }}>Thank you for your book request! We&apos;ve received your submission and will review it shortly.</p>
               
               {submitted === 'success' ? (
                 <div className='email-confirmation-notice'>
@@ -322,18 +463,48 @@ export default function RequestBookPage() {
                 </div>
               </div>
 
-              <div className='success-actions'>
+              <div className='success-actions' style={{
+                display: 'flex',
+                gap: '16px',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                marginTop: '32px'
+              }}>
                 <button 
                   className='btn primary-btn'
                   onClick={resetForm}
+                  style={{
+                    background: '#A0522D',
+                    color: 'white',
+                    padding: '14px 32px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    border: 'none',
+                    borderRadius: '50px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 6px 20px rgba(160, 82, 45, 0.3)'
+                  }}
                 >
                   Request Another Book
                 </button>
-                <Link href='/books' className='btn secondary-btn'>
+                <Link 
+                  href='/books' 
+                  className='btn secondary-btn'
+                  style={{
+                    background: '#f7fafc',
+                    color: '#2d3748',
+                    padding: '14px 32px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '50px',
+                    textDecoration: 'none',
+                    display: 'inline-block',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
                   Browse Our Collection
-                </Link>
-                <Link href='/' className='btn secondary-btn'>
-                  Back to Home
                 </Link>
               </div>
             </div>
