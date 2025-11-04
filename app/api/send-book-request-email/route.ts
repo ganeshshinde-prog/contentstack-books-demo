@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!customerEmail || !bookTitle) {
       return NextResponse.json(
-        { error: 'Customer email and book title are required' },
+        { error: 'Customer email and book title are required!' },
         { status: 400 }
       );
     }
